@@ -1,0 +1,17 @@
+# Logs gerais
+*.log
+
+# Arquivos de ambiente
+.env
+
+# Diretório do Node.js (React, Angular, etc)
+frontend/node_modules/
+
+# Arquivos de dependência
+yarn.lock
+package-lock.json
+
+# IDEs e configurações comuns
+.vscode/
+.DS_Store
+Thumbs.db
