@@ -39,3 +39,21 @@ Este repositório é um **monorepo** que contém o projeto backend (Spring Boot)
     git commit -m "feat: descrição clara da feature"
     git push origin feature/nome-da-sua-feature
 
+## 🧑‍💻 Uso do gitflow
+
+🛠️ Exemplo de uso prático:
+
+# Criar nova funcionalidade
+git flow feature start cadastro-paciente
+
+# Após finalizar
+git flow feature finish cadastro-paciente
+
+Ele vai automaticamente fazer:
+
+    Merge na develop
+
+    Remover a branch da feature local
+
+
+
