@@ -1,0 +1,197 @@
+databaseChangeLog:
+  - changeSet:
+      id: 101
+      author: amde
+      changes:
+        # Inserção de usuários
+        - insert:
+            tableName: usuario
+            columns:
+              - column: { name: id_usuario, valueNumeric: 1 }
+              - column: { name: email, value: "usuario1@email.com" }
+              - column: { name: senha, value: "senha1" }
+              - column: { name: nome, value: "Usuário 1" }
+              - column: { name: nivel_acesso, value: "USUARIO" }
+              - column: { name: data_nasc, value: "1990-01-15" }
+              - column: { name: pais, value: "Brasil" }
+              - column: { name: estado, value: "SP" }
+              - column: { name: cidade, value: "Cidade 1" }
+              - column: { name: rua, value: "Rua 1" }
+              - column: { name: num_celular, value: "11999990001" }
+        - insert:
+            tableName: usuario
+            columns:
+              - column: { name: id_usuario, valueNumeric: 2 }
+              - column: { name: email, value: "usuario2@email.com" }
+              - column: { name: senha, value: "senha2" }
+              - column: { name: nome, value: "Usuário 2" }
+              - column: { name: nivel_acesso, value: "USUARIO" }
+              - column: { name: data_nasc, value: "1990-02-15" }
+              - column: { name: pais, value: "Brasil" }
+              - column: { name: estado, value: "SP" }
+              - column: { name: cidade, value: "Cidade 2" }
+              - column: { name: rua, value: "Rua 2" }
+              - column: { name: num_celular, value: "11999990002" }
+        - insert:
+            tableName: usuario
+            columns:
+              - column: { name: id_usuario, valueNumeric: 3 }
+              - column: { name: email, value: "usuario3@email.com" }
+              - column: { name: senha, value: "senha3" }
+              - column: { name: nome, value: "Usuário 3" }
+              - column: { name: nivel_acesso, value: "USUARIO" }
+              - column: { name: data_nasc, value: "1990-03-15" }
+              - column: { name: pais, value: "Brasil" }
+              - column: { name: estado, value: "SP" }
+              - column: { name: cidade, value: "Cidade 3" }
+              - column: { name: rua, value: "Rua 3" }
+              - column: { name: num_celular, value: "11999990003" }
+        - insert:
+            tableName: usuario
+            columns:
+              - column: { name: id_usuario, valueNumeric: 4 }
+              - column: { name: email, value: "usuario4@email.com" }
+              - column: { name: senha, value: "senha4" }
+              - column: { name: nome, value: "Usuário 4" }
+              - column: { name: nivel_acesso, value: "USUARIO" }
+              - column: { name: data_nasc, value: "1990-04-15" }
+              - column: { name: pais, value: "Brasil" }
+              - column: { name: estado, value: "SP" }
+              - column: { name: cidade, value: "Cidade 4" }
+              - column: { name: rua, value: "Rua 4" }
+              - column: { name: num_celular, value: "11999990004" }
+        - insert:
+            tableName: usuario
+            columns:
+              - column: { name: id_usuario, valueNumeric: 5 }
+              - column: { name: email, value: "usuario5@email.com" }
+              - column: { name: senha, value: "senha5" }
+              - column: { name: nome, value: "Usuário 5" }
+              - column: { name: nivel_acesso, value: "USUARIO" }
+              - column: { name: data_nasc, value: "1990-05-15" }
+              - column: { name: pais, value: "Brasil" }
+              - column: { name: estado, value: "SP" }
+              - column: { name: cidade, value: "Cidade 5" }
+              - column: { name: rua, value: "Rua 5" }
+              - column: { name: num_celular, value: "11999990005" }
+        - insert:
+            tableName: usuario
+            columns:
+              - column: { name: id_usuario, valueNumeric: 6 }
+              - column: { name: email, value: "usuario6@email.com" }
+              - column: { name: senha, value: "senha6" }
+              - column: { name: nome, value: "Usuário 6" }
+              - column: { name: nivel_acesso, value: "USUARIO" }
+              - column: { name: data_nasc, value: "1990-06-15" }
+              - column: { name: pais, value: "Brasil" }
+              - column: { name: estado, value: "SP" }
+              - column: { name: cidade, value: "Cidade 6" }
+              - column: { name: rua, value: "Rua 6" }
+              - column: { name: num_celular, value: "11999990006" }
+
+        # Inserção de funcionários
+        - insert:
+            tableName: funcionarios
+            columns:
+              - column: { name: id_funcionario, valueNumeric: 1 }
+              - column: { name: id_usuario, valueNumeric: 1 }
+              - column: { name: cnpj, value: "12.345.678/0001-11" }
+              - column: { name: cargo, value: "Cargo 1" }
+        - insert:
+            tableName: funcionarios
+            columns:
+              - column: { name: id_funcionario, valueNumeric: 2 }
+              - column: { name: id_usuario, valueNumeric: 2 }
+              - column: { name: cnpj, value: "12.345.678/0001-12" }
+              - column: { name: cargo, value: "Cargo 2" }
+        - insert:
+            tableName: funcionarios
+            columns:
+              - column: { name: id_funcionario, valueNumeric: 3 }
+              - column: { name: id_usuario, valueNumeric: 3 }
+              - column: { name: cnpj, value: "12.345.678/0001-13" }
+              - column: { name: cargo, value: "Cargo 3" }
+
+        # Inserção de pacientes
+        - insert:
+            tableName: pacientes
+            columns:
+              - column: { name: id_paciente, valueNumeric: 4 }
+              - column: { name: id_usuario, valueNumeric: 4 }
+              - column: { name: desc_paciente, value: "Paciente 4 com condição especial" }
+              - column: { name: prontuario_recente, valueNumeric: 1 }
+        - insert:
+            tableName: pacientes
+            columns:
+              - column: { name: id_paciente, valueNumeric: 5 }
+              - column: { name: id_usuario, valueNumeric: 5 }
+              - column: { name: desc_paciente, value: "Paciente 5 com condição especial" }
+              - column: { name: prontuario_recente, valueNumeric: 1 }
+        - insert:
+            tableName: pacientes
+            columns:
+              - column: { name: id_paciente, valueNumeric: 6 }
+              - column: { name: id_usuario, valueNumeric: 6 }
+              - column: { name: desc_paciente, value: "Paciente 6 com condição especial" }
+              - column: { name: prontuario_recente, valueNumeric: 1 }
+
+        # Inserção de histórico de prontuário
+        - insert:
+            tableName: historico_prontuario
+            columns:
+              - column: { name: id_prontuario, valueNumeric: 1 }
+              - column: { name: id_paciente, valueNumeric: 4 }
+              - column: { name: nome_arquivo, value: "prontuario_1.pdf" }
+              - column: { name: data_atualizacao, valueDate: "2024-05-01T10:00:00" }
+        - insert:
+            tableName: historico_prontuario
+            columns:
+              - column: { name: id_prontuario, valueNumeric: 2 }
+              - column: { name: id_paciente, valueNumeric: 5 }
+              - column: { name: nome_arquivo, value: "prontuario_2.pdf" }
+              - column: { name: data_atualizacao, valueDate: "2024-05-02T10:00:00" }
+        - insert:
+            tableName: historico_prontuario
+            columns:
+              - column: { name: id_prontuario, valueNumeric: 3 }
+              - column: { name: id_paciente, valueNumeric: 6 }
+              - column: { name: nome_arquivo, value: "prontuario_3.pdf" }
+              - column: { name: data_atualizacao, valueDate: "2024-05-03T10:00:00" }
+
+        # Inserção de agendamentos
+        - insert:
+            tableName: agendamentos
+            columns:
+              - column: { name: id_agenda, valueNumeric: 1 }
+              - column: { name: id_funcionario, valueNumeric: 1 }
+              - column: { name: data_inicio, valueDate: "2024-06-10T09:00:00" }
+              - column: { name: data_final, valueDate: "2024-06-10T10:00:00" }
+              - column: { name: status, value: "Agendado" }
+              - column: { name: presenca_funcionario, valueBoolean: true }
+              - column: { name: tipo_agendamento, value: "Consulta" }
+        - insert:
+            tableName: agendamentos
+            columns:
+              - column: { name: id_agenda, valueNumeric: 2 }
+              - column: { name: id_funcionario, valueNumeric: 2 }
+              - column: { name: data_inicio, valueDate: "2024-06-11T09:00:00" }
+              - column: { name: data_final, valueDate: "2024-06-11T10:00:00" }
+              - column: { name: status, value: "Agendado" }
+              - column: { name: presenca_funcionario, valueBoolean: true }
+              - column: { name: tipo_agendamento, value: "Consulta" }
+
+        # Inserção de agenda de paciente
+        - insert:
+            tableName: agenda_paciente
+            columns:
+              - column: { name: id_agenda_paciente, valueNumeric: 1 }
+              - column: { name: id_agenda, valueNumeric: 1 }
+              - column: { name: id_paciente, valueNumeric: 4 }
+              - column: { name: presenca_paciente, valueBoolean: false }
+        - insert:
+            tableName: agenda_paciente
+            columns:
+              - column: { name: id_agenda_paciente, valueNumeric: 2 }
+              - column: { name: id_agenda, valueNumeric: 2 }
+              - column: { name: id_paciente, valueNumeric: 5 }
+              - column: { name: presenca_paciente, valueBoolean: false }
