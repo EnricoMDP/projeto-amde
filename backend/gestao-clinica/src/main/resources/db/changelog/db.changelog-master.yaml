@@ -1,0 +1,219 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: amde
+      changes:
+        - createTable:
+            tableName: usuario
+            columns:
+              - column:
+                  name: id_usuario
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(255)
+              - column:
+                  name: senha
+                  type: varchar(255)
+              - column:
+                  name: nome
+                  type: varchar(255)
+              - column:
+                  name: nivel_acesso
+                  type: varchar(50)
+              - column:
+                  name: data_nasc
+                  type: date
+              - column:
+                  name: pais
+                  type: varchar(100)
+              - column:
+                  name: estado
+                  type: varchar(100)
+              - column:
+                  name: cidade
+                  type: varchar(100)
+              - column:
+                  name: rua
+                  type: varchar(150)
+              - column:
+                  name: num_celular
+                  type: varchar(50)
+
+  - changeSet:
+      id: 2
+      author: amde
+      changes:
+        - createTable:
+            tableName: funcionarios
+            columns:
+              - column:
+                  name: id_funcionario
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: id_usuario
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cnpj
+                  type: varchar(20)
+              - column:
+                  name: cargo
+                  type: varchar(100)
+        - addForeignKeyConstraint:
+            constraintName: fk_funcionario_usuario
+            baseTableName: funcionarios
+            baseColumnNames: id_usuario
+            referencedTableName: usuario
+            referencedColumnNames: id_usuario
+
+  - changeSet:
+      id: 3
+      author: amde
+      changes:
+        - createTable:
+            tableName: pacientes
+            columns:
+              - column:
+                  name: id_paciente
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: id_usuario
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: desc_paciente
+                  type: text
+              - column:
+                  name: prontuario_recente
+                  type: int
+        - addForeignKeyConstraint:
+            constraintName: fk_paciente_usuario
+            baseTableName: pacientes
+            baseColumnNames: id_usuario
+            referencedTableName: usuario
+            referencedColumnNames: id_usuario
+
+  - changeSet:
+      id: 4
+      author: amde
+      changes:
+        - createTable:
+            tableName: historico_prontuario
+            columns:
+              - column:
+                  name: id_prontuario
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: id_paciente
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: nome_arquivo
+                  type: varchar(255)
+              - column:
+                  name: data_atualizacao
+                  type: timestamp
+        - addForeignKeyConstraint:
+            constraintName: fk_prontuario_paciente
+            baseTableName: historico_prontuario
+            baseColumnNames: id_paciente
+            referencedTableName: pacientes
+            referencedColumnNames: id_paciente
+
+  - changeSet:
+      id: 5
+      author: amde
+      changes:
+        - createTable:
+            tableName: agendamentos
+            columns:
+              - column:
+                  name: id_agenda
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: id_funcionario
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_inicio
+                  type: timestamp
+              - column:
+                  name: data_final
+                  type: timestamp
+              - column:
+                  name: status
+                  type: varchar(50)
+              - column:
+                  name: presenca_funcionario
+                  type: boolean
+              - column:
+                  name: tipo_agendamento
+                  type: varchar(100)
+        - addForeignKeyConstraint:
+            constraintName: fk_agendamento_funcionario
+            baseTableName: agendamentos
+            baseColumnNames: id_funcionario
+            referencedTableName: funcionarios
+            referencedColumnNames: id_funcionario
+
+  - changeSet:
+      id: 6
+      author: amde
+      changes:
+        - createTable:
+            tableName: agenda_paciente
+            columns:
+              - column:
+                  name: id_agenda_paciente
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: id_agenda
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: id_paciente
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: presenca_paciente
+                  type: boolean
+        - addForeignKeyConstraint:
+            constraintName: fk_agenda_paciente_agendamento
+            baseTableName: agenda_paciente
+            baseColumnNames: id_agenda
+            referencedTableName: agendamentos
+            referencedColumnNames: id_agenda
+        - addForeignKeyConstraint:
+            constraintName: fk_agenda_paciente_paciente
+            baseTableName: agenda_paciente
+            baseColumnNames: id_paciente
+            referencedTableName: pacientes
+            referencedColumnNames: id_paciente
+
+  - include:
+      file: db/changelog/inserts/insert-inicial.yaml
