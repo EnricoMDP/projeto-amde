@@ -120,6 +120,9 @@ Veja como as camadas interagem quando o usuário solicita a lista de usuários c
 7.  **Frontend (React)**: Recebe o JSON, atualiza seu estado e renderiza a lista de usuários na tela.
 
 
+## Fluxo de Listagem de Usuários
+
+```
 Frontend (React)
    ↓  (1. Usuário acessa tela de usuários)
 HTTP GET /api/usuarios
@@ -137,6 +140,8 @@ Controller (UsuarioController)
 Frontend (React)
    ↓  (7. Exibe lista de usuários na interface)
 Usuário final
+```
+
 
 ---
 
