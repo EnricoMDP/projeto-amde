@@ -195,3 +195,16 @@ databaseChangeLog:
               - column: { name: id_agenda, valueNumeric: 2 }
               - column: { name: id_paciente, valueNumeric: 5 }
               - column: { name: presenca_paciente, valueBoolean: false }
+# ...existing inserts...
+
+  - changeSet:
+      id: 102
+      author: amde
+      changes:
+        - sql:
+            comment: Ajusta o sequence do id_usuario para o maior valor já inserido
+            sql: >
+              SELECT setval(
+                pg_get_serial_sequence('usuario', 'id_usuario'),
+                (SELECT MAX(id_usuario) FROM usuario)
+              );
