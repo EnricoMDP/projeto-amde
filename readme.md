@@ -2,25 +2,54 @@
 
 Este repositório é um **monorepo** que contém o projeto backend (Spring Boot) e futuramente o frontend (React ou Angular) do sistema de gestão da **Associação Amigos dos Deficientes (AMDE)**.
 
----
-
 ## 📂 Estrutura do Projeto
-- `backend`: Contém toda a aplicação backend desenvolvida em Java com Spring Boot.
-- `frontend`: Contém a aplicação frontend, que será desenvolvida em React.
+- `backend`: Parte do java
+- `frontend`: Parte do react
+
+
+## 📦 Estrutura dos Pacotes
+
+- `controller`: Endpoints REST da aplicação
+- `service`: Lógica de negócio
+- `model`: Entidades JPA
+- `repository`: Interfaces JPA (Spring Data)
+- `dto`: Objetos de transferência de dados
+- `config`: Configurações gerais (CORS, Swagger, etc)
+- `security`: Configuração de autenticação/autorização
+- `exception`: Tratamento centralizado de erros
+- `util`: Classes utilitárias
 
 ---
 
-## 📦 Estrutura dos Pacotes (Backend)
+## 🚀 Guia de Instalação e Execução
 
-- `controller`: Endpoints REST da aplicação que se comunicam com o frontend.
-- `service`: Camada que contém toda a lógica de negócio do sistema.
-- `model`: Entidades JPA que representam as tabelas do banco de dados.
-- `repository`: Interfaces do Spring Data JPA para acesso e manipulação dos dados.
-- `dto`: Objetos de Transferência de Dados (Data Transfer Objects) para a comunicação entre camadas.
-- `config`: Configurações gerais da aplicação (CORS, Swagger, Segurança, etc).
-- `security`: Configurações de autenticação e autorização, incluindo filtros JWT.
-- `exception`: Classes para tratamento centralizado de erros e exceções.
-- `util`: Classes utilitárias, como `JwtUtil` para geração e validação de tokens.
+Siga os passos abaixo para configurar e executar o ambiente de desenvolvimento localmente.
+
+1.  **Clone o repositório:**
+    Primeiro, clone o projeto do GitHub para a sua máquina local e entre na pasta criada.
+    ```bash
+    git clone [https://github.com/EnricoMDP/projeto-amde.git](https://github.com/EnricoMDP/projeto-amde.git)
+    cd projeto-amde
+    ```
+
+2.  **Suba o banco de dados com Docker:**
+    Este comando irá iniciar o container do PostgreSQL em segundo plano (`-d`), que é necessário para o backend funcionar.
+    ```bash
+    docker compose up -d
+    ```
+
+3.  **Execute a aplicação Backend (Spring Boot):**
+    Navegue até a pasta do projeto Java e use o Maven para compilar o projeto e iniciar o servidor.
+    ```bash
+    cd backend/gestao-clinica
+    mvn clean install
+    mvn spring-boot:run
+    ```
+
+4.  **Acesse a documentação da API (Swagger):**
+    Após a inicialização completa do Spring Boot, a API estará rodando. Você pode explorar e testar todos os endpoints através do Swagger UI no seu navegador:
+
+    [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
 
 ---
 
@@ -94,39 +123,36 @@ Veja como as camadas interagem quando o usuário solicita a lista de usuários c
 
 ## 🧭 Como contribuir com o desenvolvimento
 
-1.  Faça fork ou clone deste repositório:
-    ```bash
-    git clone [https://github.com/EnricoMDP/projeto-amde.git](https://github.com/EnricoMDP/projeto-amde.git)
-    ```
+1. Faça fork ou clone deste repositório:
+   ```bash
+   git clone [https://github.com/EnricoMDP/projeto-amde.git](https://github.com/EnricoMDP/projeto-amde.git)
 
-2.  Navegue até o diretório do backend:
-    ```bash
-    cd backend/gestao-clinica
-    ```
+2. Navegue até o diretório do backend:
 
-3.  Crie uma nova branch (usando Git Flow ou manualmente):
-    ```bash
-    git checkout -b feature/nome-da-sua-feature
-    ```
+    cd backend/gestao-clinica
 
-4.  Após implementar sua funcionalidade:
-    ```bash
-    git add .
-    git commit -m "feat: descrição clara da feature"
-    git push origin feature/nome-da-sua-feature
-    ```
+3. Crie uma nova branch (usando Git Flow ou manualmente):
 
----
+    git checkout -b feature/nome-da-sua-feature
 
-## 🧑‍💻 Uso do Gitflow
+4. Após implementar sua funcionalidade:
 
-Para manter o versionamento organizado, utilizamos o Git Flow.
+    git add .
+    git commit -m "feat: descrição clara da feature"
+    git push origin feature/nome-da-sua-feature
 
-🛠️ **Exemplo de uso prático:**
+## 🧑‍💻 Uso do gitflow
 
-```bash
-# Iniciar uma nova funcionalidade (ex: cadastro-paciente)
+🛠️ Exemplo de uso prático:
+
+# Criar nova funcionalidade
 git flow feature start cadastro-paciente
 
-# Após finalizar e commitar suas alterações
+# Após finalizar
 git flow feature finish cadastro-paciente
+
+Ele vai automaticamente fazer:
+
+    Merge na develop
+
+    Remover a branch da feature local
