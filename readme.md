@@ -119,6 +119,25 @@ Veja como as camadas interagem quando o usuário solicita a lista de usuários c
 6.  **Controller (`UsuarioController`)**: Recebe a lista de DTOs e a retorna como uma resposta JSON para o frontend.
 7.  **Frontend (React)**: Recebe o JSON, atualiza seu estado e renderiza a lista de usuários na tela.
 
+
+Frontend (React)
+   ↓  (1. Usuário acessa tela de usuários)
+HTTP GET /api/usuarios
+   ↓
+Controller (UsuarioController)
+   ↓  (2. Recebe requisição, chama service)
+Service (UsuarioService)
+   ↓  (3. Busca usuários no repository)
+Repository (UsuarioRepository)
+   ↓  (4. Consulta banco de dados e retorna entidades Usuario)
+Service (UsuarioService)
+   ↓  (5. Converte entidades Usuario em UsuarioDTO)
+Controller (UsuarioController)
+   ↓  (6. Retorna lista de UsuarioDTO como JSON)
+Frontend (React)
+   ↓  (7. Exibe lista de usuários na interface)
+Usuário final
+
 ---
 
 ## 🧭 Como contribuir com o desenvolvimento
