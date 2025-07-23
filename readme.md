@@ -42,8 +42,8 @@ Siga os passos abaixo para configurar e executar o ambiente de desenvolvimento l
     Navegue até a pasta do projeto Java e use o Maven para compilar o projeto e iniciar o servidor.
     ```bash
     cd backend/gestao-clinica
-    mvn clean install
     mvn spring-boot:run
+    mvn clean install
     ```
 
 4.  **Acesse a documentação da API (Swagger):**
