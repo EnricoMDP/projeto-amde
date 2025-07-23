@@ -3,7 +3,7 @@ spring:
     name: gestao-clinica
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/gestao_clinica
+    url: jdbc:postgresql://localhost:5433/gestao_clinica
     username: postgres
     password: postgres
 
