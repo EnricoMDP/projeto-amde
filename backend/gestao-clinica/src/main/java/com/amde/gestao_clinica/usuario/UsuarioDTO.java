@@ -1,4 +1,4 @@
-package com.amde.gestao_clinica.dto;
+package com.amde.gestao_clinica.usuario;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,11 +8,11 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UsuarioCadastroDTO {
+public class UsuarioDTO {
+    private Long idUsuario;
     private String email;
-    private String senha;
     private String nome;
-    private String nivelAcesso;
+    private NivelAcesso nivelAcesso;
     private LocalDate dataNasc;
     private String pais;
     private String estado;

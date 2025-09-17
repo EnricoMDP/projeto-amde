@@ -1,9 +1,5 @@
-package com.amde.gestao_clinica.controller;
+package com.amde.gestao_clinica.usuario;
 
-import com.amde.gestao_clinica.dto.UsuarioDTO;
-import com.amde.gestao_clinica.dto.UsuarioCadastroDTO;
-import com.amde.gestao_clinica.dto.UsuarioLoginDTO;
-import com.amde.gestao_clinica.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +11,7 @@ public class UsuarioController {
 
     private final UsuarioService service;
 
+    // Injeção por construtor (Spring injeta automaticamente)
     public UsuarioController(UsuarioService service) {
         this.service = service;
     }
@@ -23,7 +20,6 @@ public class UsuarioController {
     public ResponseEntity<List<UsuarioDTO>> listarTodos() {
         return ResponseEntity.ok(service.listarTodos());
     }
-
 
     @PostMapping("/register")
     public ResponseEntity<UsuarioDTO> register(@RequestBody UsuarioCadastroDTO dto) {
@@ -34,5 +30,11 @@ public class UsuarioController {
     public ResponseEntity<String> login(@RequestBody UsuarioLoginDTO dto) {
         String jwt = service.login(dto);
         return ResponseEntity.ok(jwt);
+    }
+
+    @GetMapping("/{id}/perfil")
+    public ResponseEntity<PerfilPacienteDTO> obterPerfil(@PathVariable("id") Long id) {
+        PerfilPacienteDTO perfil = service.buscarPerfilPacientePorId(id);
+        return ResponseEntity.ok(perfil);
     }
 }

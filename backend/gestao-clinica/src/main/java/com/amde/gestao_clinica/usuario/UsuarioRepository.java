@@ -1,6 +1,5 @@
-package com.amde.gestao_clinica.repository;
+package com.amde.gestao_clinica.usuario;
 
-import com.amde.gestao_clinica.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

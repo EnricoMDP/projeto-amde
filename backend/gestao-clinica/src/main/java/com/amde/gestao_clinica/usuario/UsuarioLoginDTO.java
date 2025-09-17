@@ -1,4 +1,4 @@
-package com.amde.gestao_clinica.dto;
+package com.amde.gestao_clinica.usuario;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

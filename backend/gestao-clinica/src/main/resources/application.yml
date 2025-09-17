@@ -23,3 +23,6 @@ server:
 jwt:
   secret: K7g/T3ZAmXbYq5kE8R/u5gW2sN6FvHjJ9cK4aLpG7sQ=
   expiration: 36000000
+
+file:
+  upload-dir: ./uploads/prontuarios
