@@ -41,7 +41,7 @@ const Login = () => {
         description: "Redirecionando para o sistema..."
       });
       console.log("Login attempt:", { email, password });
-      navigate("/admin/overview");
+      navigate("/admin/overview"); // rota botão login
     }
   };
 
