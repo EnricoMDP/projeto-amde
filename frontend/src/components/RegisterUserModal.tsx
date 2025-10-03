@@ -1,0 +1,233 @@
+import { useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { register as registerApi, type RegisterPayload } from "@/services/auth";
+
+type Nivel = "PACIENTE" | "MEDICO" | "ADMINISTRADOR";
+
+export interface RegisterUserModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void; // chamado após cadastro com sucesso
+}
+
+export default function RegisterUserModal({ open, onOpenChange, onSuccess }: RegisterUserModalProps) {
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    nome: "",
+    email: "",
+    senha: "",
+    confirmarSenha: "",
+    nivelAcesso: "PACIENTE" as Nivel,
+    descPaciente: "",
+    dataNasc: "",
+    pais: "",
+    estado: "",
+    cidade: "",
+    rua: "",
+    numCelular: "",
+  });
+
+  const isPaciente = useMemo(() => form.nivelAcesso === "PACIENTE", [form.nivelAcesso]);
+
+  const setField = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Máscara de telefone (BR): (99) 99999-9999 ou (99) 9999-9999
+  const maskPhoneBR = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length <= 10) {
+      // (99) 9999-9999
+      return digits
+        .replace(/(\d{0,2})(\d{0,4})(\d{0,4}).*/, (m, p1, p2, p3) => {
+          let out = "";
+          if (p1) out = `(${p1}` + (p1.length === 2 ? ") " : "" );
+          if (p2) out += p2 + (p2.length === 4 ? "-" : "");
+          if (p3) out += p3;
+          return out;
+        });
+    }
+    // (99) 99999-9999
+    return digits
+      .replace(/(\d{0,2})(\d{0,5})(\d{0,4}).*/, (m, p1, p2, p3) => {
+        let out = "";
+        if (p1) out = `(${p1}` + (p1.length === 2 ? ") " : "" );
+        if (p2) out += p2 + (p2.length === 5 ? "-" : "");
+        if (p3) out += p3;
+        return out;
+      });
+  };
+
+  // Máscara/normalização de UF (2 letras)
+  const normalizeUF = (v: string) => v.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 2);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Validações obrigatórias
+    if (!form.nome) return toast.error("Nome é obrigatório");
+    if (!form.email) return toast.error("Email é obrigatório");
+    if (!/\S+@\S+\.\S+/.test(form.email)) return toast.error("Email inválido");
+    if (!form.senha) return toast.error("Senha é obrigatória");
+    if (form.senha.length < 6) {
+      toast.error("Senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+    if (form.senha !== form.confirmarSenha) {
+      toast.error("Senhas não coincidem");
+      return;
+    }
+    if (!form.nivelAcesso) return toast.error("Nível de acesso é obrigatório");
+    if (!form.numCelular) return toast.error("Telefone é obrigatório");
+    if (!form.pais) return toast.error("País é obrigatório");
+    if (!form.estado) return toast.error("Estado (UF) é obrigatório");
+    if (form.estado.length !== 2) return toast.error("Estado (UF) deve ter 2 letras");
+    if (!form.cidade) return toast.error("Cidade é obrigatória");
+    if (!form.dataNasc) return toast.error("Data de nascimento é obrigatória");
+    if (!form.rua) return toast.error("Rua é obrigatória");
+
+    const payload: RegisterPayload = {
+      nome: form.nome,
+      email: form.email,
+      senha: form.senha,
+      nivelAcesso: form.nivelAcesso,
+      descPaciente: isPaciente && form.descPaciente ? form.descPaciente : undefined,
+      dataNasc: form.dataNasc || undefined,
+      pais: form.pais || undefined,
+      estado: form.estado || undefined,
+      cidade: form.cidade || undefined,
+      rua: form.rua || undefined,
+      numCelular: form.numCelular || undefined,
+    };
+
+    try {
+      setSubmitting(true);
+      await registerApi(payload);
+      toast.success("Usuário criado com sucesso");
+      onOpenChange(false);
+      onSuccess?.();
+      // limpa formulário ao fechar
+      setForm({
+        nome: "",
+        email: "",
+        senha: "",
+        confirmarSenha: "",
+        nivelAcesso: "PACIENTE",
+        descPaciente: "",
+        dataNasc: "",
+        pais: "",
+        estado: "",
+        cidade: "",
+        rua: "",
+        numCelular: "",
+      });
+    } catch (err: any) {
+      toast.error("Falha ao criar usuário", { description: err?.message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Novo usuário</DialogTitle>
+          <DialogDescription>Preencha os dados para cadastrar um novo usuário.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome completo *</Label>
+              <Input value={form.nome} required onChange={(e) => setField("nome", e.target.value)} placeholder="Nome e sobrenome" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email *</Label>
+              <Input type="email" required value={form.email} onChange={(e) => setField("email", e.target.value)} placeholder="email@dominio.com" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Senha *</Label>
+              <Input type="password" required value={form.senha} onChange={(e) => setField("senha", e.target.value)} placeholder="Crie uma senha" />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirmar senha *</Label>
+              <Input type="password" required value={form.confirmarSenha} onChange={(e) => setField("confirmarSenha", e.target.value)} placeholder="Confirme a senha" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nível de acesso *</Label>
+              {/* Select não suporta required nativo; validamos no submit */}
+              <Select value={form.nivelAcesso} onValueChange={(v) => setField("nivelAcesso", v as Nivel)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PACIENTE">Paciente</SelectItem>
+                  <SelectItem value="MEDICO">Médico</SelectItem>
+                  <SelectItem value="ADMINISTRADOR">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Telefone *</Label>
+              <Input required value={form.numCelular} onChange={(e) => setField("numCelular", maskPhoneBR(e.target.value))} placeholder="(11) 99999-9999" />
+            </div>
+          </div>
+
+          {isPaciente && (
+            <div className="space-y-2">
+              <Label>Descrição do paciente</Label>
+              <Textarea value={form.descPaciente} onChange={(e) => setField("descPaciente", e.target.value)} placeholder="Condição, observações, etc." />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2 md:col-span-1">
+              <Label>País *</Label>
+              <Input required value={form.pais} onChange={(e) => setField("pais", e.target.value)} placeholder="Brasil" />
+            </div>
+            <div className="space-y-2 md:col-span-1">
+              <Label>Estado *</Label>
+              <Input required value={form.estado} onChange={(e) => setField("estado", normalizeUF(e.target.value))} placeholder="SP" />
+            </div>
+            <div className="space-y-2 md:col-span-1">
+              <Label>Cidade *</Label>
+              <Input required value={form.cidade} onChange={(e) => setField("cidade", e.target.value)} placeholder="São Paulo" />
+            </div>
+            <div className="space-y-2 md:col-span-1">
+              <Label>Data de nascimento *</Label>
+              <Input type="date" required value={form.dataNasc} onChange={(e) => setField("dataNasc", e.target.value)} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Rua *</Label>
+            <Input required value={form.rua} onChange={(e) => setField("rua", e.target.value)} placeholder="Rua, número e complemento" />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Salvando..." : "Criar usuário"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

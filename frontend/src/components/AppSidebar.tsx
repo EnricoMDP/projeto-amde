@@ -1,6 +1,6 @@
 
-import { Users, BarChart3, UserCheck } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { Users, BarChart3, UserCheck, LogOut } from "lucide-react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -12,16 +12,19 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { getAuth } from "@/lib/auth";
+import { logout as doLogout } from "@/services/auth";
 
 const menuItems = [
   {
     title: "Visão Geral",
-    url: "/admin/overview",
+    url: "/overview",
     icon: BarChart3,
   },
   {
     title: "Pacientes",
-    url: "/admin/patients",
+    url: "/patients",
     icon: UserCheck,
   },
   {
@@ -33,6 +36,24 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { role } = getAuth();
+
+  const items = menuItems.filter((item) => {
+    if (item.url === "/admin/users") {
+      return role === "ADMINISTRADOR"; // somente admin
+    }
+    if (item.url === "/patients") {
+      return role === "ADMINISTRADOR" || role === "MEDICO"; // admin e médico
+    }
+    // visão geral disponível para todos autenticados
+    return true;
+  });
+
+  const handleLogout = () => {
+    doLogout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <Sidebar className="border-r border-gray-200">
@@ -54,26 +75,28 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     isActive={location.pathname === item.url}
                     className="w-full"
                   >
-                    <a
-                      href={item.url}
-                      className="flex items-center space-x-3 p-3 rounded-lg transition-colors"
-                    >
+                    <Link to={item.url} className="flex items-center space-x-3 p-3 rounded-lg transition-colors">
                       <item.icon className="w-5 h-5" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        <div className="mt-auto p-4">
+          <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
+            <LogOut className="w-4 h-4 mr-2" /> Sair
+          </Button>
+        </div>
       </SidebarContent>
     </Sidebar>
   );

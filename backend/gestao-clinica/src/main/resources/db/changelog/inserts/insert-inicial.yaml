@@ -208,3 +208,15 @@ databaseChangeLog:
                 pg_get_serial_sequence('usuario', 'id_usuario'),
                 (SELECT MAX(id_usuario) FROM usuario)
               );
+# ...existing code...
+
+  - changeSet:
+      id: 103
+      author: amde
+      changes:
+        - sql:
+            comment: Converte valores antigos de nivel_acesso=USUARIO para PACIENTE
+            sql: |
+              UPDATE usuario
+              SET nivel_acesso = 'PACIENTE'
+              WHERE nivel_acesso = 'USUARIO';

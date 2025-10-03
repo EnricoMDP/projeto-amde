@@ -19,6 +19,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
+    private static final String ROLE_ADMIN = "ADMINISTRADOR";
+    private static final String ROLE_MEDICO = "MEDICO";
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
@@ -33,14 +35,16 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> {})
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                 .requestMatchers("/api/usuarios/register", "/api/usuarios/login").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/usuarios", "/api/usuarios/*/perfil")
-                    .hasAnyRole("ADMINISTRADOR","MEDICO")
+                    .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole(ROLE_ADMIN)
+                    .requestMatchers(HttpMethod.GET, "/api/usuarios/pacientes").hasAnyRole(ROLE_ADMIN, ROLE_MEDICO)
+                    .requestMatchers(HttpMethod.GET, "/api/usuarios/*/perfil").hasAnyRole(ROLE_ADMIN, ROLE_MEDICO)
+                .requestMatchers(HttpMethod.PUT, "/api/usuarios/**").hasRole(ROLE_ADMIN)
+                .requestMatchers(HttpMethod.DELETE, "/api/usuarios/**").hasRole(ROLE_ADMIN)
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -50,8 +54,9 @@ public class SecurityConfig {
 
     @Bean
     public CorsFilter corsFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:8081"));
+    CorsConfiguration config = new CorsConfiguration();
+    // Permite Vite (http) e mkcert (https) em localhost
+    config.setAllowedOriginPatterns(List.of("http://localhost:*", "https://localhost:*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
