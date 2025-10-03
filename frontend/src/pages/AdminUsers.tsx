@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Users, Plus, MoreHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Users, Plus, Pencil, Trash2, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -11,88 +11,101 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-// Dados fictícios para popular a tabela
-const usersData = [
-  {
-    id: "001",
-    name: "Dr. João Silva",
-    email: "joao.silva@amde.com.br",
-    accessLevel: "Administrador",
-    birthDate: "15/03/1985",
-    country: "Brasil",
-    state: "São Paulo",
-    city: "São Paulo",
-    street: "Rua das Flores, 123",
-    phone: "(11) 99999-0001",
-  },
-  {
-    id: "002",
-    name: "Dra. Maria Santos",
-    email: "maria.santos@amde.com.br",
-    accessLevel: "Médico",
-    birthDate: "22/07/1990",
-    country: "Brasil",
-    state: "Rio de Janeiro",
-    city: "Rio de Janeiro",
-    street: "Av. Copacabana, 456",
-    phone: "(21) 99999-0002",
-  },
-  {
-    id: "003",
-    name: "Carlos Oliveira",
-    email: "carlos.oliveira@amde.com.br",
-    accessLevel: "Recepcionista",
-    birthDate: "10/12/1988",
-    country: "Brasil",
-    state: "Minas Gerais",
-    city: "Belo Horizonte",
-    street: "Rua da Liberdade, 789",
-    phone: "(31) 99999-0003",
-  },
-  {
-    id: "004",
-    name: "Ana Costa",
-    email: "ana.costa@amde.com.br",
-    accessLevel: "Enfermeira",
-    birthDate: "05/09/1992",
-    country: "Brasil",
-    state: "Paraná",
-    city: "Curitiba",
-    street: "Av. Brasil, 321",
-    phone: "(41) 99999-0004",
-  },
-  {
-    id: "005",
-    name: "Roberto Lima",
-    email: "roberto.lima@amde.com.br",
-    accessLevel: "Médico",
-    birthDate: "18/11/1983",
-    country: "Brasil",
-    state: "Bahia",
-    city: "Salvador",
-    street: "Rua do Campo, 654",
-    phone: "(71) 99999-0005",
-  },
-];
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getUsuarios, type UsuarioDTO } from "@/services/users";
+import RegisterUserModal from "@/components/RegisterUserModal";
+import EditUserModal from "@/components/EditUserModal";
+import { deleteUsuario } from "@/services/users";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
 
 const AdminUsers = () => {
-  const [users] = useState(usersData);
+  const [users, setUsers] = useState<UsuarioDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [openRegister, setOpenRegister] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UsuarioDTO | null>(null);
+  // Controles de busca/ordenacao/filtro
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<"id" | "nome" | "nivel">("id");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [filterNivel, setFilterNivel] = useState<"ALL" | "PACIENTE" | "MEDICO" | "ADMINISTRADOR">("ALL");
 
-  const getAccessLevelColor = (level: string) => {
-    switch (level) {
-      case "Administrador":
+  const reload = async () => {
+    let active = true;
+    try {
+      setLoading(true);
+      const data = await getUsuarios();
+      if (active) setUsers(data);
+    } catch (e: any) {
+      if (active) setError(e?.message || "Falha ao carregar usuários");
+    } finally {
+      if (active) setLoading(false);
+    }
+    return () => { active = false; };
+  };
+
+  useEffect(() => { reload(); }, []);
+
+  const getAccessLevelColor = (nivel: UsuarioDTO["nivelAcesso"]) => {
+    switch (nivel) {
+      case "ADMINISTRADOR":
         return "bg-red-100 text-red-800";
-      case "Médico":
+      case "MEDICO":
         return "bg-blue-100 text-blue-800";
-      case "Enfermeira":
+      case "PACIENTE":
         return "bg-green-100 text-green-800";
-      case "Recepcionista":
-        return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  const getAccessLevelLabel = (nivel: UsuarioDTO["nivelAcesso"]) => {
+    switch (nivel) {
+      case "ADMINISTRADOR":
+        return "Administrador";
+      case "MEDICO":
+        return "Médico";
+      case "PACIENTE":
+        return "Paciente";
+      default:
+        return nivel;
+    }
+  };
+
+  const stats = useMemo(() => {
+    const administradores = users.filter((u) => u.nivelAcesso === "ADMINISTRADOR").length;
+    const medicos = users.filter((u) => u.nivelAcesso === "MEDICO").length;
+    const pacientes = users.length - administradores - medicos; // pacientes e demais
+    return { total: users.length, administradores, medicos, pacientes };
+  }, [users]);
+
+  const visibleUsers = useMemo(() => {
+    let list = [...users];
+    // filtro por nivel
+    if (filterNivel !== "ALL") {
+      list = list.filter((u) => u.nivelAcesso === filterNivel);
+    }
+    // busca por nome ou email
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((u) =>
+        `${u.nome ?? ""}`.toLowerCase().includes(q) || `${u.email ?? ""}`.toLowerCase().includes(q)
+      );
+    }
+    // ordenação
+    list.sort((a, b) => {
+      let comp = 0;
+      if (sortKey === "id") comp = (a.idUsuario ?? 0) - (b.idUsuario ?? 0);
+      if (sortKey === "nome") comp = `${a.nome ?? ""}`.localeCompare(`${b.nome ?? ""}`);
+      if (sortKey === "nivel") comp = `${a.nivelAcesso}`.localeCompare(`${b.nivelAcesso}`);
+      return sortDir === "asc" ? comp : -comp;
+    });
+    return list;
+  }, [users, filterNivel, search, sortKey, sortDir]);
 
   return (
     <div className="p-6 space-y-6">
@@ -107,7 +120,7 @@ const AdminUsers = () => {
             <p className="text-gray-600">Gerencie os usuários do sistema</p>
           </div>
         </div>
-        <Button className="bg-primary-500 hover:bg-primary-600 text-white">
+        <Button className="bg-primary-500 hover:bg-primary-600 text-white" onClick={() => setOpenRegister(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Adicionar Usuário
         </Button>
@@ -120,7 +133,7 @@ const AdminUsers = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total de Usuários</p>
-                <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
               <Users className="w-8 h-8 text-primary-500" />
             </div>
@@ -132,7 +145,7 @@ const AdminUsers = () => {
               <div>
                 <p className="text-sm text-gray-600">Administradores</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.accessLevel === "Administrador").length}
+                  {stats.administradores}
                 </p>
               </div>
               <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
@@ -147,7 +160,7 @@ const AdminUsers = () => {
               <div>
                 <p className="text-sm text-gray-600">Médicos</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.accessLevel === "Médico").length}
+                  {stats.medicos}
                 </p>
               </div>
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -160,9 +173,9 @@ const AdminUsers = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Outros</p>
+                <p className="text-sm text-gray-600">Pacientes</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => !["Administrador", "Médico"].includes(u.accessLevel)).length}
+                  {stats.pacientes}
                 </p>
               </div>
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -173,20 +186,58 @@ const AdminUsers = () => {
         </Card>
       </div>
 
-      {/* Users Table */}
+      {/* Users Controls + Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Lista de Usuários</CardTitle>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <CardTitle className="text-lg font-semibold">Lista de Usuários</CardTitle>
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome ou email..."
+                  className="pl-8"
+                />
+              </div>
+              <Select value={filterNivel} onValueChange={(v) => setFilterNivel(v as any)}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Filtrar por nível" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Todos os níveis</SelectItem>
+                  <SelectItem value="ADMINISTRADOR">Administrador</SelectItem>
+                  <SelectItem value="MEDICO">Médico</SelectItem>
+                  <SelectItem value="PACIENTE">Paciente</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                title={`Ordenação: ${sortDir === "asc" ? "Ascendente" : "Descendente"}`}
+              >
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                {sortDir === "asc" ? "ASC" : "DESC"}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold text-gray-700">ID</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Nome Completo</TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    <button className="inline-flex items-center gap-1" onClick={() => setSortKey("id")}>ID</button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    <button className="inline-flex items-center gap-1" onClick={() => setSortKey("nome")}>Nome Completo</button>
+                  </TableHead>
                   <TableHead className="font-semibold text-gray-700">Email</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Nível de Acesso</TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    <button className="inline-flex items-center gap-1" onClick={() => setSortKey("nivel")}>Nível de Acesso</button>
+                  </TableHead>
                   <TableHead className="font-semibold text-gray-700">Data de Nascimento</TableHead>
                   <TableHead className="font-semibold text-gray-700">País</TableHead>
                   <TableHead className="font-semibold text-gray-700">Estado</TableHead>
@@ -197,34 +248,111 @@ const AdminUsers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-gray-50">
-                    <TableCell className="font-medium text-gray-900">{user.id}</TableCell>
-                    <TableCell className="font-medium text-gray-900">{user.name}</TableCell>
-                    <TableCell className="text-gray-600">{user.email}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAccessLevelColor(user.accessLevel)}`}>
-                        {user.accessLevel}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-gray-600">{user.birthDate}</TableCell>
-                    <TableCell className="text-gray-600">{user.country}</TableCell>
-                    <TableCell className="text-gray-600">{user.state}</TableCell>
-                    <TableCell className="text-gray-600">{user.city}</TableCell>
-                    <TableCell className="text-gray-600 max-w-xs truncate">{user.street}</TableCell>
-                    <TableCell className="text-gray-600">{user.phone}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                {loading && (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-6 text-gray-500">
+                      Carregando...
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
+                {!loading && error && (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-6 text-red-600">
+                      {error}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading && !error && visibleUsers.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-6 text-gray-500">
+                      Nenhum usuário encontrado
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading && !error && visibleUsers.map((user) => {
+                  const birth = user.dataNasc ? (() => {
+                    try { return format(parseISO(user.dataNasc), "dd/MM/yyyy"); } catch { return "-"; }
+                  })() : "-";
+                  const rua = user.rua ?? "-";
+                  return (
+                    <TableRow key={user.idUsuario} className="hover:bg-gray-50">
+                      <TableCell className="font-medium text-gray-900">{user.idUsuario}</TableCell>
+                      <TableCell className="font-medium text-gray-900">{user.nome}</TableCell>
+                      <TableCell className="text-gray-600">{user.email}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAccessLevelColor(user.nivelAcesso)}`}>
+                          {getAccessLevelLabel(user.nivelAcesso)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-gray-600">{birth}</TableCell>
+                      <TableCell className="text-gray-600">{user.pais ?? "-"}</TableCell>
+                      <TableCell className="text-gray-600">{user.estado ?? "-"}</TableCell>
+                      <TableCell className="text-gray-600">{user.cidade ?? "-"}</TableCell>
+                      <TableCell className="text-gray-600 max-w-xs truncate">{rua}</TableCell>
+                      <TableCell className="text-gray-600">{user.numCelular ?? "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => { setSelectedUser(user); setOpenEdit(true); }}
+                            title="Editar"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" title="Apagar">
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir o usuário {user.nome}? Esta ação não poderá ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={async () => {
+                                    try {
+                                      await deleteUsuario(user.idUsuario);
+                                      toast.success("Usuário removido");
+                                      reload();
+                                    } catch (err: any) {
+                                      toast.error("Falha ao remover usuário", { description: err?.message });
+                                    }
+                                  }}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Remover
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
+      <RegisterUserModal
+        open={openRegister}
+        onOpenChange={setOpenRegister}
+        onSuccess={() => { reload(); }}
+      />
+      <EditUserModal
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        user={selectedUser}
+        onSuccess={() => { reload(); }}
+      />
     </div>
   );
 };

@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Eye, EyeOff, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Mail, User, Lock } from "lucide-react";
+import { login as loginApi } from "@/services/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const navigate = useNavigate();
 
@@ -34,14 +36,23 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
+    if (!validateForm()) return;
+
+    try {
+      setSubmitting(true);
+      await loginApi({ email, senha: password });
       toast.success("Login realizado com sucesso!", {
-        description: "Redirecionando para o sistema..."
+        description: "Redirecionando para o sistema...",
       });
-      console.log("Login attempt:", { email, password });
-      navigate("/admin/overview"); // rota botão login
+      // Redireciona para a página inicial do admin (ajuste a rota conforme seu Router)
+      navigate("/overview");
+    } catch (err: any) {
+      const message = err?.message || "Usuário ou senha inválidos";
+      toast.error("Falha no login", { description: message });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -100,6 +111,7 @@ const Login = () => {
                   Senha *
                 </Label>
                 <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-medical-gray" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -111,7 +123,7 @@ const Login = () => {
                         setErrors({ ...errors, password: undefined });
                       }
                     }}
-                    className={`pr-10 h-11 ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'}`}
+                    className={`pl-10 pr-10 h-11 ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'}`}
                   />
                   <button
                     type="button"
@@ -138,22 +150,11 @@ const Login = () => {
               <Button
                 type="submit"
                 className="w-full h-11 bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors"
+                disabled={submitting}
               >
-                Entrar
+                {submitting ? "Entrando..." : "Entrar"}
               </Button>
             </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-medical-gray">
-                Não tem uma conta?{" "}
-                <Link
-                  to="/cadastro"
-                  className="text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors"
-                >
-                  Criar conta
-                </Link>
-              </p>
-            </div>
           </CardContent>
         </Card>
 
