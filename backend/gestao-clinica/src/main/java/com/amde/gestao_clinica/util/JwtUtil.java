@@ -28,6 +28,17 @@ public class JwtUtil {
         return createToken(claims, email);
     }
 
+    // Overload: incluir nome completo no token
+    public String generateToken(Long userId, String email, String role, String name) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+        claims.put("uid", userId);
+        if (name != null && !name.isBlank()) {
+            claims.put("name", name);
+        }
+        return createToken(claims, email);
+    }
+
     // Mantém compatibilidade com quem chama só com email
     public String generateToken(String email) {
         return createToken(new HashMap<>(), email);

@@ -1,5 +1,7 @@
 package com.amde.gestao_clinica.exception;
 
+import com.amde.gestao_clinica.usuario.BusinessException;
+import com.amde.gestao_clinica.usuario.ResourceNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,24 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Object> handleNotFound(ResourceNotFoundException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("error", "Not Found");
+        body.put("message", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Object> handleBusiness(BusinessException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("error", "Business Error");
+        body.put("message", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<Object> handleRuntimeException(RuntimeException ex) {
@@ -32,4 +52,4 @@ public class GlobalExceptionHandler {
         body.put("message", ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage());
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
-};
+}

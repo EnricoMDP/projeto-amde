@@ -1,5 +1,6 @@
 package com.amde.gestao_clinica.usuario;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,13 +22,19 @@ public class UsuarioController {
         return ResponseEntity.ok(service.listarTodos());
     }
 
+    // Lista somente usuários com nível PACIENTE
+    @GetMapping("/pacientes")
+    public ResponseEntity<List<UsuarioDTO>> listarPacientes() {
+        return ResponseEntity.ok(service.listarPorNivel(NivelAcesso.PACIENTE));
+    }
+
     @PostMapping("/register")
-    public ResponseEntity<UsuarioDTO> register(@RequestBody UsuarioCadastroDTO dto) {
+    public ResponseEntity<UsuarioDTO> register(@Valid @RequestBody UsuarioCadastroDTO dto) {
         return ResponseEntity.ok(service.register(dto));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UsuarioLoginDTO dto) {
+    public ResponseEntity<String> login(@Valid @RequestBody UsuarioLoginDTO dto) {
         String jwt = service.login(dto);
         return ResponseEntity.ok(jwt);
     }
@@ -36,5 +43,17 @@ public class UsuarioController {
     public ResponseEntity<PerfilPacienteDTO> obterPerfil(@PathVariable("id") Long id) {
         PerfilPacienteDTO perfil = service.buscarPerfilPacientePorId(id);
         return ResponseEntity.ok(perfil);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioDTO> atualizar(@PathVariable("id") Long id,
+                                                @RequestBody UsuarioAtualizacaoDTO dto) {
+        return ResponseEntity.ok(service.atualizarUsuario(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable("id") Long id) {
+        service.deletarUsuario(id);
+        return ResponseEntity.noContent().build();
     }
 }
