@@ -13,12 +13,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getPacientes, type UsuarioDTO } from "@/services/users";
+import PatientDetailsModal from "@/components/PatientDetailsModal";
 import { format, parseISO } from "date-fns";
 
 const Patients = () => {
   const [users, setUsers] = useState<UsuarioDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openDetails, setOpenDetails] = useState(false);
+  const [selected, setSelected] = useState<UsuarioDTO | null>(null);
   // Controles de busca/ordenacao/filtro (mantidos idênticos)
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<"id" | "nome" | "nivel">("id");
@@ -196,7 +199,10 @@ const Patients = () => {
                   return (
                     <TableRow key={user.idUsuario} className="hover:bg-gray-50">
                       <TableCell className="font-medium text-gray-900">{user.idUsuario}</TableCell>
-                      <TableCell className="font-medium text-primary-700 hover:underline cursor-pointer" onClick={() => {/* futuro modal */}}>
+                      <TableCell
+                        className="font-medium text-primary-700 hover:underline cursor-pointer"
+                        onClick={() => { setSelected(user); setOpenDetails(true); }}
+                      >
                         {user.nome}
                       </TableCell>
                       <TableCell className="text-gray-600">{user.email}</TableCell>
@@ -219,8 +225,12 @@ const Patients = () => {
           </div>
         </CardContent>
       </Card>
+      <PatientDetailsModal open={openDetails} onOpenChange={setOpenDetails} patient={selected} />
     </div>
   );
 };
 
 export default Patients;
+
+// Modal de detalhes
+// Render fora do return principal para manter o código limpo

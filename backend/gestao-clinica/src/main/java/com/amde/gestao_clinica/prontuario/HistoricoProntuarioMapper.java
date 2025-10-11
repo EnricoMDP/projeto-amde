@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface HistoricoProntuarioMapper {
 
-    // mapeia os campos com os mesmos nomes: nomeArquivo -> nomeArquivo, dataAtualizacao -> dataAtualizacao
+    // id -> idProntuario; demais possuem mesmo nome
+    @org.mapstruct.Mapping(source = "id", target = "idProntuario")
     ProntuarioDTO toDTO(HistoricoProntuario historico);
 }

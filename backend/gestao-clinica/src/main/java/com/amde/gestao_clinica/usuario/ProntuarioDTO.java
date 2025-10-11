@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProntuarioDTO {
+    private Long idProntuario;
     private String nomeArquivo;
     private LocalDateTime dataAtualizacao;
+    private String displayName; // nome padronizado para exibição/baixa
 }
