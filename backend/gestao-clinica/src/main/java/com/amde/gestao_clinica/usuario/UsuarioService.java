@@ -7,7 +7,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.amde.gestao_clinica.util.JwtUtil;
 import com.amde.gestao_clinica.prontuario.HistoricoProntuario;
 import com.amde.gestao_clinica.prontuario.HistoricoProntuarioRepository;
-import com.amde.gestao_clinica.prontuario.HistoricoProntuarioMapper;
 
 import java.util.List;
 
@@ -19,20 +18,18 @@ public class UsuarioService {
     private final JwtUtil jwtUtil;
     private final UsuarioMapper mapper;
     private final HistoricoProntuarioRepository historicoRepository;
-    private final HistoricoProntuarioMapper historicoMapper;
+    // MapStruct mapper removed from here; we'll map HistoricoProntuario -> ProntuarioDTO manually
 
     public UsuarioService(UsuarioRepository repository,
                           PasswordEncoder passwordEncoder,
                           JwtUtil jwtUtil,
                           UsuarioMapper mapper,
-                          HistoricoProntuarioRepository historicoRepository,
-                          HistoricoProntuarioMapper historicoMapper) {
+                          HistoricoProntuarioRepository historicoRepository) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.mapper = mapper;
         this.historicoRepository = historicoRepository;
-        this.historicoMapper = historicoMapper;
     }
 
     public List<UsuarioDTO> listarTodos() { 
@@ -100,8 +97,33 @@ public class UsuarioService {
                 .findByPacienteIdOrderByDataAtualizacaoDesc(paciente.getId());
 
         List<ProntuarioDTO> prontuarios = historicos.stream()
-                .map(historicoMapper::toDTO)
+                .map(h -> {
+                    ProntuarioDTO dto = new ProntuarioDTO();
+                    dto.setIdProntuario(h.getId());
+                    dto.setNomeArquivo(h.getNomeArquivo());
+                    dto.setDataAtualizacao(h.getDataAtualizacao());
+                    // displayName será definido abaixo
+                    return dto;
+                })
                 .toList();
+
+        // Preenche displayName com sequência estável baseada em id crescente
+        var ordenados = historicos.stream().sorted((a,b) -> Long.compare(a.getId(), b.getId())).toList();
+        for (int i = 0; i < ordenados.size(); i++) {
+            Long id = ordenados.get(i).getId();
+            for (ProntuarioDTO p : prontuarios) {
+                if (p.getIdProntuario().equals(id)) {
+                    // se nomeArquivo já é padronizado (novos registros), use-o como display
+                    if (p.getNomeArquivo() != null && !p.getNomeArquivo().isBlank()) {
+                        p.setDisplayName(p.getNomeArquivo());
+                    } else {
+                        String base = usuario.getNome() == null ? "paciente" : usuario.getNome().trim().replaceAll("[^a-zA-Z0-9]+", "_");
+                        p.setDisplayName(base + "_prt" + (i + 1) + ".pdf");
+                    }
+                    break;
+                }
+            }
+        }
 
         UsuarioDTO usuarioDTO = mapper.toDTO(usuario);
 
