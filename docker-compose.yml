@@ -1,28 +1,42 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15
-    container_name: db_amde
+  db:
+    image: postgres:15-alpine
+    container_name: amde_postgres_db
     restart: always
     environment:
-      POSTGRES_DB: gestao_clinica
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
+      - POSTGRES_USER=amde
+      - POSTGRES_PASSWORD=amde
+      - POSTGRES_DB=amde_db
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin_amde
+  backend:
+    build:
+      context: .
+      dockerfile: backend/gestao-clinica/Dockerfile
+    container_name: amde_backend
     restart: always
+    depends_on:
+      - db
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@amde.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/amde_db
+      - SPRING_DATASOURCE_USERNAME=amde
+      - SPRING_DATASOURCE_PASSWORD=amde
+    expose:
+      - "8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: amde_frontend
+    restart: always
     ports:
-      - "5050:80"
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
-  pgdata:
+  postgres_data:
