@@ -217,3 +217,5 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/inserts/insert-inicial.yaml
+  - include:
+      file: db/changelog/inserts/001-insert-admin-user.yaml

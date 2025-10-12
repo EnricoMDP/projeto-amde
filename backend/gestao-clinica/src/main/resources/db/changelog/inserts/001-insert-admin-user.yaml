@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: enrico
+      changes:
+        - insert:
+            tableName: usuario
+            columns:
+              - column:
+                  name: nome
+                  value: "Administrador do Sistema"
+              - column:
+                  name: email
+                  value: "admin@amde.com"
+              - column:
+                  name: senha
+                  value: "5a9b39bf-d14a-47b7-8733-3393f62dd7ce"
+              - column:
+                  name: nivel_acesso
+                  value: "ADMIN"
+              - column:
+                  name: data_nasc
+                  value: "1990-01-01"
+              - column:
+                  name: pais
+                  value: "Brasil"
+              - column:
+                  name: estado
+                  value: "SP"
+              - column:
+                  name: cidade
+                  value: "Sorocaba"
+              - column:
+                  name: rua
+                  value: "Rua da AMDE"
+              - column:
+                  name: num_celular
+                  value: "15999999999"
