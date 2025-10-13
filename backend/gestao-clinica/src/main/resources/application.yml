@@ -30,3 +30,6 @@ jwt:
 storage:
   prontuarios:
     dir: ${PRONTUARIOS_DIR:uploads/prontuarios}
+app:
+  cors:
+    allowed-origins: http://localhost:8080,http://localhost:5173 

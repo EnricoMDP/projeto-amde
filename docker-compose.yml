@@ -1,31 +1,23 @@
-version: '3.8'
-
+# Arquivo Base para todos os ambientes (desenvolvimento e produção)
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: amde_postgres_db
-    restart: always
-    environment:
-      - POSTGRES_USER=amde
-      - POSTGRES_PASSWORD=amde
-      - POSTGRES_DB=amde_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   backend:
     build:
       context: .
       dockerfile: backend/gestao-clinica/Dockerfile
     container_name: amde_backend
     restart: always
-    depends_on:
-      - db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/amde_db
-      - SPRING_DATASOURCE_USERNAME=amde
-      - SPRING_DATASOURCE_PASSWORD=amde
+      # As variáveis de conexão serão fornecidas pelo arquivo .env
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      # A variável de CORS também virá do .env
+      - APP_CORS_ALLOWED_ORIGINS=${APP_CORS_ALLOWED_ORIGINS}
     expose:
       - "8080"
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build:
@@ -37,6 +29,23 @@ services:
       - "80:80"
     depends_on:
       - backend
+
+  db:
+    image: postgres:15-alpine
+    container_name: amde_postgres_db
+    restart: always
+    environment:
+      # As variáveis do banco virão do .env
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
