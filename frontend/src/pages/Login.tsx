@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,16 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Eye, EyeOff, Mail, User, Lock } from "lucide-react";
-import { login as loginApi } from "@/services/auth";
+import { Eye, EyeOff, Mail, User } from "lucide-react";
+import axios from "axios"; // Importa o axios
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Hook para fazer o redirecionamento
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -28,31 +26,54 @@ const Login = () => {
     
     if (!password) {
       newErrors.password = "Senha é obrigatória";
-    } else if (password.length < 6) {
-      newErrors.password = "Senha deve ter pelo menos 6 caracteres";
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // --- FUNÇÃO handleSubmit CORRIGIDA ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (validateForm()) {
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/usuarios/login`;
 
-    try {
-      setSubmitting(true);
-      await loginApi({ email, senha: password });
-      toast.success("Login realizado com sucesso!", {
-        description: "Redirecionando para o sistema...",
-      });
-      // Redireciona para a página inicial do admin (ajuste a rota conforme seu Router)
-      navigate("/overview");
-    } catch (err: any) {
-      const message = err?.message || "Usuário ou senha inválidos";
-      toast.error("Falha no login", { description: message });
-    } finally {
-      setSubmitting(false);
+      try {
+        const response = await axios.post(apiUrl, {
+          email: email,
+          // CORREÇÃO PRINCIPAL: Enviando 'senha' como o backend espera
+          senha: password, 
+        });
+
+        // Se o login for bem-sucedido (status 200)
+        toast.success("Login realizado com sucesso!", {
+          description: "Redirecionando para o sistema...",
+        });
+        
+        // Exemplo: Salvar o token e redirecionar
+        const { token } = response.data;
+        localStorage.setItem("authToken", token); // Salva o token no navegador
+        
+        // Redireciona para a página principal após um pequeno atraso
+        setTimeout(() => {
+          navigate("/dashboard"); // ou a rota principal do seu sistema
+        }, 1000);
+
+      } catch (error) {
+        // CORREÇÃO DO "Unexpected any": Verificamos se o erro é do axios
+        if (axios.isAxiosError(error) && error.response) {
+          // O backend respondeu com um erro (ex: 401 Unauthorized)
+          toast.error("Falha no login", {
+            description: error.response.data.message || "Credenciais inválidas. Verifique seu email e senha."
+          });
+        } else {
+          // Erro de rede ou outro problema
+          toast.error("Erro de Conexão", {
+            description: "Não foi possível conectar ao servidor. Tente novamente mais tarde."
+          });
+        }
+        console.error("Login error:", error);
+      }
     }
   };
 
@@ -111,7 +132,6 @@ const Login = () => {
                   Senha *
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-medical-gray" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -123,7 +143,7 @@ const Login = () => {
                         setErrors({ ...errors, password: undefined });
                       }
                     }}
-                    className={`pl-10 pr-10 h-11 ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'}`}
+                    className={`pr-10 h-11 ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'}`}
                   />
                   <button
                     type="button"
@@ -150,11 +170,22 @@ const Login = () => {
               <Button
                 type="submit"
                 className="w-full h-11 bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors"
-                disabled={submitting}
               >
-                {submitting ? "Entrando..." : "Entrar"}
+                Entrar
               </Button>
             </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-medical-gray">
+                Não tem uma conta?{" "}
+                <Link
+                  to="/cadastro"
+                  className="text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors"
+                >
+                  Criar conta
+                </Link>
+              </p>
+            </div>
           </CardContent>
         </Card>
 

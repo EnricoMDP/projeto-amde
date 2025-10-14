@@ -17,7 +17,7 @@ databaseChangeLog:
                   value: "5a9b39bf-d14a-47b7-8733-3393f62dd7ce"
               - column:
                   name: nivel_acesso
-                  value: "ADMIN"
+                  value: "ADMINISTRADOR"
               - column:
                   name: data_nasc
                   value: "1990-01-01"
