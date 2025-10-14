@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: enrico
+      changes:
+        - update:
+            tableName: usuario
+            columns:
+              - column:
+                  name: nivel_acesso
+                  value: "ADMINISTRADOR"
+            where: "nivel_acesso = 'ADMIN'"
