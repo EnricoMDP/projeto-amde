@@ -56,7 +56,7 @@ const Login = () => {
         
         // Redireciona para a página principal após um pequeno atraso
         setTimeout(() => {
-          navigate("/dashboard"); // ou a rota principal do seu sistema
+          navigate("/"); // ou a rota principal do seu sistema
         }, 1000);
 
       } catch (error) {
@@ -174,18 +174,6 @@ const Login = () => {
                 Entrar
               </Button>
             </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-medical-gray">
-                Não tem uma conta?{" "}
-                <Link
-                  to="/cadastro"
-                  className="text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors"
-                >
-                  Criar conta
-                </Link>
-              </p>
-            </div>
           </CardContent>
         </Card>
 
