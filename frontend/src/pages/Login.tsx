@@ -56,7 +56,7 @@ const Login = () => {
         
         // Redireciona para a página principal após um pequeno atraso
         setTimeout(() => {
-          navigate("/"); // ou a rota principal do seu sistema
+          navigate("/overview"); // ou a rota principal do seu sistema
         }, 1000);
 
       } catch (error) {
