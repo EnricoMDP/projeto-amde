@@ -12,9 +12,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getPacientes, type UsuarioDTO } from "@/services/users";
+import type { UsuarioDTO } from "@/services/users";
+import apiClient from "@/lib/apiClient";
 import PatientDetailsModal from "@/components/PatientDetailsModal";
 import { format, parseISO } from "date-fns";
+import { AxiosError } from "axios";
 
 const Patients = () => {
   const [users, setUsers] = useState<UsuarioDTO[]>([]);
@@ -28,21 +30,31 @@ const Patients = () => {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filterNivel, setFilterNivel] = useState<"ALL" | "PACIENTE" | "MEDICO" | "ADMINISTRADOR">("ALL");
 
-  const reload = async () => {
-    let active = true;
+  // Busca usando apiClient (token via interceptor)
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      const data = await getPacientes();
-      if (active) setUsers(data);
-    } catch (e: any) {
-      if (active) setError(e?.message || "Falha ao carregar pacientes");
+      const response = await apiClient.get<UsuarioDTO[]>("/api/usuarios/pacientes");
+      setUsers(response.data);
+    } catch (err) {
+      let errorMessage = "Falha ao carregar pacientes.";
+      if (err instanceof AxiosError && err.response) {
+        if (err.response.status === 403) {
+          errorMessage = "Você não tem permissão para acessar esta lista.";
+        } else if ((err.response.data as any)?.message) {
+          errorMessage = (err.response.data as any).message;
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     } finally {
-      if (active) setLoading(false);
+      setLoading(false);
     }
-    return () => { active = false; };
   };
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const getAccessLevelColor = (nivel: UsuarioDTO["nivelAcesso"]) => {
     switch (nivel) {
@@ -129,10 +141,7 @@ const Patients = () => {
                   <SelectValue placeholder="Filtrar por nível" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Todos os níveis</SelectItem>
                   <SelectItem value="PACIENTE">Paciente</SelectItem>
-                  <SelectItem value="MEDICO">Médico</SelectItem>
-                  <SelectItem value="ADMINISTRADOR">Administrador</SelectItem>
                 </SelectContent>
               </Select>
               <Button

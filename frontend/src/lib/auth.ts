@@ -1,79 +1,130 @@
-import { getToken as getStoredToken, setToken as setStoredToken } from "@/lib/http";
+import { jwtDecode } from "jwt-decode";
 
+// Define os tipos de papéis válidos na sua aplicação
 export type Role = "ADMINISTRADOR" | "MEDICO" | "PACIENTE";
 
-type JwtPayload = {
-  sub?: string;
-  exp?: number;
-  role?: string;
-  uid?: number | string;
-  email?: string;
-  name?: string;
-  [k: string]: any;
-};
+// Define a estrutura esperada do payload dentro do token JWT
+// Ajuste os tipos (ex: uid pode ser string se vier assim do backend)
+interface JwtPayload {
+  uid: number;       // ID do usuário
+  role: Role;        // Papel do usuário
+  name: string;      // Nome do usuário
+  sub: string;       // Assunto (geralmente o email)
+  iat: number;       // Timestamp de emissão (issued at)
+  exp: number;       // Timestamp de expiração (expiration time)
+}
 
-export function decodeJwt(token: string): JwtPayload | null {
+// Interface para o objeto de autenticação retornado pela getAuth
+interface AuthState {
+  token: string | null;
+  role: Role | null;
+  username: string | null; // Usaremos 'name' ou 'sub' (email) como username
+  isAuthenticated: boolean;
+  uid: number | null; // Incluindo o ID do usuário se precisar
+}
+
+/**
+ * Função principal para obter os dados de autenticação.
+ * Lê o token do localStorage, decodifica com segurança usando jwt-decode
+ * e retorna o estado de autenticação atual.
+ */
+export function getAuth(): AuthState {
+  const token = localStorage.getItem("authToken");
+
+  // Se não houver token, retorna estado "deslogado"
+  if (!token) {
+    return {
+      token: null,
+      role: null,
+      username: null,
+      isAuthenticated: false,
+      uid: null,
+    };
+  }
+
   try {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
-}
+    // Decodifica o token usando a biblioteca jwt-decode
+    const decoded = jwtDecode<JwtPayload>(token);
 
-function isExpired(payload: JwtPayload | null): boolean {
-  if (!payload || typeof payload.exp !== "number") return false;
-  const nowSec = Math.floor(Date.now() / 1000);
-  return payload.exp <= nowSec;
-}
+    // Verifica se o token expirou (exp é em segundos, Date.now() em milissegundos)
+    const isExpired = Date.now() >= decoded.exp * 1000;
 
-function normalizeRole(value?: string | null): Role | null {
-  if (!value) return null;
-  const r = value.toUpperCase();
-  return r === "ADMINISTRADOR" || r === "MEDICO" || r === "PACIENTE" ? (r as Role) : null;
-}
-
-function toNumberOrNull(v: unknown): number | null {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
-export function getAuth() {
-  let token = getStoredToken();
-  let role: Role | null = null;
-  let uid: number | null = null;
-  let email: string | null = null;
-  let name: string | null = null;
-
-  if (token) {
-    const payload = decodeJwt(token);
-    if (isExpired(payload)) {
-      setStoredToken(null);
-      token = null;
-    } else if (payload) {
-      role = normalizeRole(payload.role ?? null);
-      uid = toNumberOrNull(payload.uid);
-      email = payload.email || payload.sub || null;
-      name = typeof payload.name === "string" ? payload.name : null;
+    if (isExpired) {
+      console.warn("Token JWT expirado.");
+      localStorage.removeItem("authToken"); // Limpa o token expirado
+      // Dispara evento para notificar o AuthContext, se ele estiver escutando 'storage'
+      window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', newValue: null }));
+      return {
+        token: null,
+        role: null,
+        username: null,
+        isAuthenticated: false,
+        uid: null,
+      };
     }
+
+    // Se o token é válido e não expirou, retorna os dados
+    return {
+      token,
+      role: decoded.role,
+      username: decoded.name || decoded.sub, // Prefere o nome, senão usa o email
+      isAuthenticated: true,
+      uid: decoded.uid,
+    };
+
+  } catch (error) {
+    // Se a decodificação falhar (token inválido/malformado)
+    console.error("Falha ao decodificar token JWT:", error);
+    localStorage.removeItem("authToken"); // Limpa o token inválido
+    // Dispara evento para notificar o AuthContext
+     window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', newValue: null }));
+    return {
+      token: null,
+      role: null,
+      username: null,
+      isAuthenticated: false,
+      uid: null,
+    };
   }
-
-  const username = name || email || null;
-  return { token, role, uid, email, name, username };
 }
 
-export function isAuthenticated() {
-  return !!getAuth().token;
+// Funções auxiliares que usam getAuth() para conveniência
+
+/**
+ * Verifica rapidamente se o usuário está autenticado (possui um token válido e não expirado).
+ */
+export function isAuthenticated(): boolean {
+  return getAuth().isAuthenticated;
 }
 
-export function hasAnyRole(roles: Role[]) {
-  const { role } = getAuth();
-  return !!role && roles.includes(role);
+/**
+ * Verifica se o usuário autenticado possui pelo menos um dos papéis especificados.
+ * @param roles Array de papéis permitidos.
+ */
+export function hasAnyRole(roles: Role[]): boolean {
+  const { role, isAuthenticated } = getAuth();
+  return isAuthenticated && !!role && roles.includes(role);
+}
+
+// Funções para manipular o token no localStorage (podem ser usadas pelo AuthContext ou diretamente)
+
+/**
+ * Salva o token JWT no localStorage.
+ * @param token O token a ser salvo, ou null para remover.
+ */
+export function setAuthToken(token: string | null): void {
+  if (token) {
+    localStorage.setItem("authToken", token);
+  } else {
+    localStorage.removeItem("authToken");
+  }
+  // Dispara um evento 'storage' para que outras abas ou o AuthContext possam reagir
+  window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', newValue: token }));
+}
+
+/**
+ * Remove o token JWT do localStorage.
+ */
+export function clearAuthToken(): void {
+  setAuthToken(null);
 }

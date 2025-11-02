@@ -1,4 +1,4 @@
-import http from "@/lib/http";
+import apiClient from "@/lib/apiClient";
 
 export interface UsuarioDTO {
   idUsuario: number;
@@ -27,17 +27,17 @@ export interface PerfilPacienteDTO {
 }
 
 export async function getUsuarios(): Promise<UsuarioDTO[]> {
-  const { data } = await http.get<UsuarioDTO[]>("/api/usuarios");
+  const { data } = await apiClient.get<UsuarioDTO[]>("/api/usuarios");
   return data;
 }
 
 export async function getPacientes(): Promise<UsuarioDTO[]> {
-  const { data } = await http.get<UsuarioDTO[]>("/api/usuarios/pacientes");
+  const { data } = await apiClient.get<UsuarioDTO[]>("/api/usuarios/pacientes");
   return data;
 }
 
 export async function getPerfilPaciente(idUsuario: number): Promise<PerfilPacienteDTO> {
-  const { data } = await http.get<PerfilPacienteDTO>(`/api/usuarios/${idUsuario}/perfil`);
+  const { data } = await apiClient.get<PerfilPacienteDTO>(`/api/usuarios/${idUsuario}/perfil`);
   return data;
 }
 
@@ -55,12 +55,12 @@ export interface UsuarioUpdatePayload {
 }
 
 export async function updateUsuario(id: number, payload: UsuarioUpdatePayload): Promise<UsuarioDTO> {
-  const { data } = await http.put<UsuarioDTO>(`/api/usuarios/${id}`, payload);
+  const { data } = await apiClient.put<UsuarioDTO>(`/api/usuarios/${id}`, payload);
   return data;
 }
 
 export async function deleteUsuario(id: number): Promise<void> {
-  await http.delete(`/api/usuarios/${id}`);
+  await apiClient.delete(`/api/usuarios/${id}`);
 }
 
 // Upload e download de prontuários
@@ -68,7 +68,7 @@ export async function uploadProntuario(idPaciente: number, file: File) {
   const form = new FormData();
   form.append("idPaciente", String(idPaciente));
   form.append("file", file);
-  const { data } = await http.post<ProntuarioDTO>("/api/prontuarios/upload", form, {
+  const { data } = await apiClient.post<ProntuarioDTO>("/api/prontuarios/upload", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data;
@@ -76,7 +76,7 @@ export async function uploadProntuario(idPaciente: number, file: File) {
 
 export async function downloadProntuario(idProntuario: number, overrideFilename?: string) {
   // Busca autenticada (JWT via interceptor) e força download com o nome enviado pelo servidor
-  const response = await http.get(`/api/prontuarios/${idProntuario}/download`, {
+  const response = await apiClient.get(`/api/prontuarios/${idProntuario}/download`, {
     responseType: "blob",
   });
 
@@ -111,5 +111,5 @@ export async function downloadProntuario(idProntuario: number, overrideFilename?
 }
 
 export async function deleteProntuario(idProntuario: number) {
-  await http.delete(`/api/prontuarios/${idProntuario}`);
+  await apiClient.delete(`/api/prontuarios/${idProntuario}`);
 }

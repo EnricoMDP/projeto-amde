@@ -1,4 +1,4 @@
-import http, { setToken } from "@/lib/http";
+import apiClient from "@/lib/apiClient";
 
 export interface LoginPayload {
   email: string;
@@ -20,19 +20,19 @@ export interface RegisterPayload {
 }
 
 export async function login(payload: LoginPayload): Promise<string> {
-  const { data } = await http.post<string>("/api/usuarios/login", payload, {
+  const { data } = await apiClient.post<string>("/api/usuarios/login", payload, {
     responseType: "text" as any,
   });
-  // Armazena o token para os próximos requests
-  setToken(data);
+  // Armazena o token no mesmo local lido pelo apiClient
+  localStorage.setItem("authToken", data);
   return data;
 }
 
 export async function register(payload: RegisterPayload) {
-  const { data } = await http.post("/api/usuarios/register", payload);
+  const { data } = await apiClient.post("/api/usuarios/register", payload);
   return data;
 }
 
 export function logout() {
-  setToken(null);
+  localStorage.removeItem("authToken");
 }

@@ -13,7 +13,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getUsuarios, type UsuarioDTO } from "@/services/users";
+import type { UsuarioDTO } from "@/services/users";
+import apiClient from "@/lib/apiClient";
 import RegisterUserModal from "@/components/RegisterUserModal";
 import EditUserModal from "@/components/EditUserModal";
 import { deleteUsuario } from "@/services/users";
@@ -38,8 +39,8 @@ const AdminUsers = () => {
     let active = true;
     try {
       setLoading(true);
-      const data = await getUsuarios();
-      if (active) setUsers(data);
+      const res = await apiClient.get<UsuarioDTO[]>("/api/usuarios");
+      if (active) setUsers(res.data);
     } catch (e: any) {
       if (active) setError(e?.message || "Falha ao carregar usuários");
     } finally {
