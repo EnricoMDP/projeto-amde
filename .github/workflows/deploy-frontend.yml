@@ -11,7 +11,7 @@ on:
 env:
   S3_BUCKET_NAME: "amde-app-frontend-prod"
   CLOUDFRONT_DISTRIBUTION_ID: "E3ERVQZQ0D59RW"
-  AWS_REGION: "sa-east-1" # Região do seu S3 e CloudFront
+  AWS_REGION: "sa-east-1"
 
 jobs:
   build-and-deploy:
@@ -22,11 +22,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Configurar Node.js (para buildar o React)
+      # 2. Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Mesma versão do seu Dockerfile
+          node-version: '20'
 
       # 3. Buildar o Projeto
       - name: Install dependencies and build
@@ -35,8 +35,7 @@ jobs:
           npm run build
         working-directory: ./frontend
 
-      # 4. Autenticar na AWS (COM SUAS CHAVES)
-      # Esta é a etapa que mudou
+      # 4. Autenticar na AWS (Correto)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -44,16 +43,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 5. Enviar arquivos para o S3
+      # 5. Enviar arquivos para o S3 (Corrigido)
       - name: Deploy static files to S3
-        uses: aws-actions/aws-cli@v2
-        with:
-          args: >
-            s3 sync ./frontend/dist s3://${{ env.S3_BUCKET_NAME }} --delete
+        run: |
+          aws s3 sync ./frontend/dist s3://${{ env.S3_BUCKET_NAME }} --delete
 
-      # 6. Invalidar o Cache do CloudFront
+      # 6. Invalidar o Cache do CloudFront (Corrigido)
       - name: Invalidate CloudFront cache
-        uses: aws-actions/aws-cli@v2
-        with:
-          args: >
-            cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
