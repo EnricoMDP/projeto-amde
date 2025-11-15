@@ -223,3 +223,5 @@ databaseChangeLog:
       file: db/changelog/inserts/002-update-admin-role.yaml
   - include:
       file: db/changelog/inserts/003-update-admin-password.yaml 
+  - include:
+      file: db/changelog/inserts/004-refatoracao-prontuarios.yaml

@@ -1,0 +1,119 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-1-create-categoria-prontuario
+      author: enrico 
+      changes:
+        - createTable:
+            tableName: categoria_prontuario
+            columns:
+              - column:
+                  name: id_categoria
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: nome
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: descricao
+                  type: varchar(255)
+
+  - changeSet:
+      id: 004-2-populate-categorias
+      author: enrico
+      changes:
+        - insert:
+            tableName: categoria_prontuario
+            columns:
+              - column: { name: nome, value: "Exames" }
+              - column: { name: descricao, value: "Resultados de exames laboratoriais, raios-x, etc." }
+        - insert:
+            tableName: categoria_prontuario
+            columns:
+              - column: { name: nome, value: "Laudos" }
+              - column: { name: descricao, value: "Laudos médicos e avaliações." }
+        - insert:
+            tableName: categoria_prontuario
+            columns:
+              - column: { name: nome, value: "Receituário" }
+              - column: { name: descricao, value: "Receitas médicas e prescrições." }
+        - insert:
+            tableName: categoria_prontuario
+            columns:
+              - column: { name: nome, value: "Arquivado" }
+              - column: { name: descricao, value: "Documentos antigos ou migrados." }
+
+  - changeSet:
+      id: 004-3-refactor-historico-prontuario
+      author: enrico
+      changes:
+        # 1. Renomeia a tabela antiga
+        - renameTable:
+            oldTableName: historico_prontuario
+            newTableName: registro_prontuario
+        
+        # 2. Renomeia a Chave Primária
+        - renameColumn:
+            tableName: registro_prontuario
+            oldColumnName: id_prontuario
+            newColumnName: id_registro
+        
+        # 3. Renomeia as colunas de dados (conforme sua proposta)
+        - renameColumn:
+            tableName: registro_prontuario
+            oldColumnName: nome_arquivo
+            newColumnName: nome_arquivo_storage
+        - renameColumn:
+            tableName: registro_prontuario
+            oldColumnName: data_atualizacao
+            newColumnName: data_registro
+
+        # 4. Adiciona as novas colunas
+        - addColumn:
+            tableName: registro_prontuario
+            columns:
+              - column:
+                  name: id_categoria
+                  type: int
+              - column:
+                  name: titulo_documento
+                  type: varchar(255)
+              - column:
+                  # Esta é a nova coluna sugerida pelo seu colega
+                  name: nome_arquivo_original
+                  type: varchar(255)
+              - column:
+                  name: id_registro_substituido
+                  type: int
+
+  - changeSet:
+      id: 004-4-add-fks-registro-prontuario
+      author: enrico
+      changes:
+        # 5. Adiciona a FK para a nova tabela de categoria
+        - addForeignKeyConstraint:
+            constraintName: fk_registro_categoria
+            baseTableName: registro_prontuario
+            baseColumnNames: id_categoria
+            referencedTableName: categoria_prontuario
+            referencedColumnNames: id_categoria
+        
+        # 6. Adiciona a FK de versionamento (aponta para ela mesma)
+        - addForeignKeyConstraint:
+            constraintName: fk_registro_versionamento
+            baseTableName: registro_prontuario
+            baseColumnNames: id_registro_substituido
+            referencedTableName: registro_prontuario
+            referencedColumnNames: id_registro
+
+  - changeSet:
+      id: 004-5-drop-obsolete-pacientes-col
+      author: enrico
+      changes:
+        # 7. Remove a coluna 'prontuario_recente' da tabela 'pacientes'
+        - dropColumn:
+            tableName: pacientes
+            columnName: prontuario_recente
