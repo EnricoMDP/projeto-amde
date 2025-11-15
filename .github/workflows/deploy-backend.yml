@@ -28,7 +28,7 @@ jobs:
         run: |
           mvn clean package -f backend/gestao-clinica/pom.xml -DskipTests
 
-      # 4. Copiar o .jar para a EC2 (SEM RENOMEAR)
+      # 4. Copiar o .jar para a EC2 (Isso está correto)
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -39,8 +39,8 @@ jobs:
           source: "backend/gestao-clinica/target/*.jar"
           target: "/home/ubuntu/amde-backend/"
 
-      # 5. Renomear o .jar E Reiniciar o Serviço
-      - name: Rename JAR and Restart Service
+      # 5. Mover, Renomear e Reiniciar (A ETAPA CORRIGIDA)
+      - name: Move, Rename JAR, and Restart Service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -48,11 +48,14 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            cd /home/ubuntu/amde-backend/
-            # Renomeia o arquivo que acabou de chegar para 'app.jar'
-            mv gestao-clinica-*.jar app.jar
+            # 1. Mover o JAR da subpasta para o local correto E renomeá-lo
+            # (O curinga * pega a versão do pom.xml)
+            mv /home/ubuntu/amde-backend/backend/gestao-clinica/target/gestao-clinica-*.jar /home/ubuntu/amde-backend/app.jar
             
-            # Agora recarrega e reinicia o serviço
+            # 2. Limpar as pastas vazias que a cópia criou
+            rm -rf /home/ubuntu/amde-backend/backend
+            
+            # 3. Recarregar e reiniciar o serviço (agora ele vai achar o app.jar)
             sudo systemctl daemon-reload
             sudo systemctl restart amde-backend.service
             sudo systemctl status amde-backend.service
