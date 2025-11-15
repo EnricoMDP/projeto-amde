@@ -10,7 +10,7 @@ import java.util.List;
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
 
-    // Teste de deploy 2
+    // Teste de deploy 3
     private final UsuarioService service;
 
     // Injeção por construtor (Spring injeta automaticamente)
