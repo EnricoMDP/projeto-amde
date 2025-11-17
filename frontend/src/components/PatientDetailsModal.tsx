@@ -3,15 +3,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, Trash2, FileText, User as UserIcon, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowDownToLine, Trash2, FileText, User as UserIcon, Upload } from "lucide-react";
 import { getPerfilPaciente, uploadProntuario, downloadProntuario, deleteProntuario, updateUsuario, type PerfilPacienteDTO, type UsuarioDTO } from "@/services/users";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
+
+// Categorias fixas do sistema (IDs devem bater com o banco)
+const CATEGORIAS = [
+  { id: 1, nome: "Exames" },
+  { id: 2, nome: "Laudos" },
+  { id: 3, nome: "Receituário" },
+  { id: 4, nome: "Arquivado" },
+];
 
 export interface PatientDetailsModalProps {
   open: boolean;
@@ -23,9 +32,13 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
   const [loading, setLoading] = useState(false);
   const [perfil, setPerfil] = useState<PerfilPacienteDTO | null>(null);
   const [infoAdicionais, setInfoAdicionais] = useState<string>("");
+  
+  // Estados para Upload
   const [uploading, setUploading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("1"); // Default: Exames
+  const [docTitle, setDocTitle] = useState("");
+  
   const [savingInfo, setSavingInfo] = useState(false);
-  const [searchDate, setSearchDate] = useState<string>("");
 
   useEffect(() => {
     let active = true;
@@ -38,7 +51,7 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
         setPerfil(data);
         setInfoAdicionais(data.descricao ?? "");
       } catch (err: any) {
-        toast.error("Falha ao carregar perfil do paciente", { description: err?.message });
+        toast.error("Falha ao carregar perfil", { description: err?.message });
       } finally {
         if (active) setLoading(false);
       }
@@ -47,36 +60,28 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
     return () => { active = false; };
   }, [open, patient?.idUsuario]);
 
-  const ageText = useMemo(() => {
-    const dateStr = patient?.dataNasc || perfil?.usuario.dataNasc;
-    if (!dateStr) return "-";
-    try {
-      const birth = parseISO(dateStr);
-      const now = new Date();
-      let age = now.getFullYear() - birth.getFullYear();
-      const m = now.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
-      return `${age} anos`;
-    } catch { return "-"; }
-  }, [patient?.dataNasc, perfil?.usuario.dataNasc]);
-
-  const phoneText = useMemo(() => patient?.numCelular || perfil?.usuario.numCelular || "-", [patient?.numCelular, perfil?.usuario.numCelular]);
-
   const docs = perfil?.prontuarios ?? [];
-  const filteredDocs = useMemo(() => {
-    if (!searchDate) return docs;
-    // searchDate vem como YYYY-MM-DD
-    return docs.filter((d) => (d.dataAtualizacao || "").startsWith(searchDate));
-  }, [docs, searchDate]);
 
-  const getStandardName = (indexZeroBased: number, docDisplay?: string) => {
-    if (docDisplay) return docDisplay;
-    const name = (perfil?.usuario?.nome || patient?.nome || "paciente").trim().replace(/[^a-zA-Z0-9]+/g, "_");
-    return `${name}_prt${indexZeroBased + 1}.pdf`;
-  };
+  // Agrupa documentos por categoria para exibir no Accordion
+  const groupedDocs = useMemo(() => {
+    const groups: Record<string, typeof docs> = {};
+    CATEGORIAS.forEach(c => groups[c.nome] = []);
+    
+    docs.forEach(doc => {
+      const catName = doc.nomeCategoria || "Sem Categoria";
+      if (!groups[catName]) groups[catName] = [];
+      groups[catName].push(doc);
+    });
+    return groups;
+  }, [docs]);
 
   const onPickFile = async () => {
     if (!patient) return;
+    if (!docTitle.trim()) {
+      toast.error("Digite um título para o documento");
+      return;
+    }
+
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "application/pdf";
@@ -85,13 +90,16 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
       if (!f) return;
       try {
         setUploading(true);
-        await uploadProntuario(patient.idUsuario, f);
-        toast.success("Prontuário enviado com sucesso");
-        // Recarrega perfil para refletir novo documento
+        // Envia ID da categoria e Título
+        await uploadProntuario(patient.idUsuario, f, Number(selectedCategory), docTitle);
+        toast.success("Documento salvo");
+        setDocTitle(""); // Limpa título
+        
+        // Recarrega
         const data = await getPerfilPaciente(patient.idUsuario);
         setPerfil(data);
       } catch (err: any) {
-        toast.error("Falha no upload do prontuário", { description: err?.message });
+        toast.error("Falha no upload", { description: err?.message });
       } finally {
         setUploading(false);
       }
@@ -105,10 +113,8 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
       setSavingInfo(true);
       await updateUsuario(patient.idUsuario, { descPaciente: infoAdicionais });
       toast.success("Informações salvas");
-      const data = await getPerfilPaciente(patient.idUsuario);
-      setPerfil(data);
     } catch (err: any) {
-      toast.error("Falha ao salvar informações", { description: err?.message });
+      toast.error("Erro ao salvar", { description: err?.message });
     } finally {
       setSavingInfo(false);
     }
@@ -116,165 +122,153 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl rounded-xl shadow-xl bg-white supports-[backdrop-filter]:bg-white/90">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900">{patient?.nome ?? "Paciente"}</DialogTitle>
-          <DialogDescription className="text-sm text-gray-500">Paciente NV 2</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col p-0 gap-0 bg-white">
+        {/* Header Fixo */}
+        <div className="p-6 pb-4 border-b">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  <UserIcon className="h-5 w-5" />
+                </AvatarFallback>
+              </Avatar>
+              {patient?.nome ?? "Paciente"}
+            </DialogTitle>
+            <DialogDescription>Prontuário Digital</DialogDescription>
+          </DialogHeader>
+        </div>
 
-        {/* Cabeçalho com avatar e infos */}
-        <div className="flex gap-4 items-start">
-          <Avatar className="h-16 w-16">
-            <AvatarFallback className="bg-gray-100 text-gray-500">
-              <UserIcon className="h-8 w-8" />
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+          {/* Coluna Esquerda: Informações */}
+          <div className="w-full md:w-1/3 border-r bg-gray-50 p-4 flex flex-col gap-4 overflow-y-auto">
             <div className="space-y-1">
-              <div className="text-xs text-gray-500">Idade</div>
-              <div className="font-semibold" style={{ color: "#0077FF" }}>{ageText}</div>
+               <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
+               <div className="text-sm truncate" title={patient?.email}>{patient?.email}</div>
             </div>
             <div className="space-y-1">
-              <div className="text-xs text-gray-500">Telefone</div>
-              <div className="font-semibold" style={{ color: "#0077FF" }}>{phoneText}</div>
+               <label className="text-xs font-medium text-gray-500 uppercase">Telefone</label>
+               <div className="text-sm">{patient?.numCelular || "-"}</div>
             </div>
-            <div className="md:col-span-2 space-y-1">
-              <div className="text-sm text-gray-600">Informações adicionais</div>
+            
+            <Separator />
+            
+            <div className="flex-1 flex flex-col gap-2">
+              <label className="text-xs font-medium text-gray-500 uppercase">Anotações Clínicas</label>
               <Textarea
                 value={infoAdicionais}
                 onChange={(e) => setInfoAdicionais(e.target.value)}
-                placeholder="Adicionar observações..."
-                className="min-h-[80px] border-gray-200"
+                placeholder="Observações sobre o paciente..."
+                className="flex-1 min-h-[150px] text-sm resize-none bg-white"
               />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <Separator className="my-2 flex-1" />
-          <div className="ml-4">
-            <Button onClick={onSaveInfo} disabled={savingInfo} className="bg-primary-500 hover:bg-primary-600 text-white">
-              {savingInfo ? "Salvando..." : "Salvar informações"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Lista de documentos */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-gray-700">Documentos</div>
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-[200px] justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {searchDate
-                      ? new Date(searchDate).toLocaleDateString()
-                      : "Filtrar por data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={searchDate ? new Date(searchDate) : undefined}
-                    onSelect={(d) => setSearchDate(d ? d.toISOString().slice(0,10) : "")}
-                    captionLayout="dropdown"
-                    fromYear={1950}
-                    toYear={2100}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              {searchDate && (
-                <Button variant="ghost" size="sm" onClick={() => setSearchDate("")}>Limpar</Button>
-              )}
-              <Button variant="secondary" onClick={onPickFile} disabled={uploading}>
-                {uploading ? "Enviando..." : "Enviar prontuário (PDF)"}
+              <Button size="sm" onClick={onSaveInfo} disabled={savingInfo}>
+                {savingInfo ? "Salvando..." : "Salvar Notas"}
               </Button>
             </div>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-[#F9F9F9]">
-            <ScrollArea className="h-64 p-2">
-              <div className="space-y-2">
-                {loading && (
-                  <div className="text-center text-gray-500 text-sm py-6">Carregando...</div>
-                )}
-                {!loading && filteredDocs.length === 0 && (
-                  <div className="text-center text-gray-500 text-sm py-6">Nenhum documento encontrado</div>
-                )}
-                {!loading && filteredDocs.map((doc, idx) => {
-                  const d1 = doc.dataAtualizacao ? (() => { try { return format(parseISO(doc.dataAtualizacao as any), "dd/MM/yyyy HH:mm"); } catch { return "-"; } })() : "-";
-                  const d2 = "-"; // Sem createdAt no DTO atual
-                  const key = `${(doc as any).idProntuario ?? doc.nomeArquivo}-${doc.dataAtualizacao ?? ""}`;
-                  const displayName = getStandardName(idx, (doc as any).displayName);
-                  return (
-                    <div key={key} className="flex items-center justify-between gap-3 bg-white rounded-md shadow-sm border border-gray-100 p-3 hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-md bg-[#F5F5F5] flex items-center justify-center">
-                          <FileText className="h-5 w-5 text-gray-500" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-gray-800 break-all">{displayName}</span>
-                          <span className="text-xs text-gray-500">Criado: {d2} • Atualizado: {d1}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={async () => {
-                            try {
-                              await downloadProntuario((doc as any).idProntuario, displayName);
-                            } catch (err: any) {
-                              toast.error("Falha no download do prontuário", { description: err?.message });
-                            }
-                          }}
-                          title="Baixar"
-                        >
-                          <ArrowDownToLine className="h-5 w-5 text-gray-600 hover:opacity-80" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" title="Excluir">
-                              <Trash2 className="h-5 w-5 text-red-500 hover:opacity-80" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir prontuário?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta ação não pode ser desfeita. O arquivo será removido definitivamente.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={async () => {
-                                  try {
-                                    await deleteProntuario((doc as any).idProntuario);
-                                    toast.success("Prontuário excluído");
-                                    const data = await getPerfilPaciente(patient!.idUsuario);
-                                    setPerfil(data);
-                                  } catch (err: any) {
-                                    toast.error("Falha ao excluir prontuário", { description: err?.message });
-                                  }
-                                }}
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  );
-                })}
+
+          {/* Coluna Direita: Documentos */}
+          <div className="flex-1 flex flex-col p-4 bg-white overflow-hidden">
+            
+            {/* Área de Upload */}
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4 space-y-3">
+              <div className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+                <Upload className="w-4 h-4" /> Novo Documento
               </div>
+              <div className="flex gap-2">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-[140px] bg-white h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIAS.map(cat => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>{cat.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input 
+                  className="flex-1 bg-white h-9 text-sm" 
+                  placeholder="Título do documento (ex: Raio-X)" 
+                  value={docTitle}
+                  onChange={e => setDocTitle(e.target.value)}
+                />
+              </div>
+              <Button className="w-full h-8 text-xs" onClick={onPickFile} disabled={uploading}>
+                {uploading ? "Enviando..." : "Selecionar Arquivo (PDF) e Salvar"}
+              </Button>
+            </div>
+
+            {/* Lista de Documentos (Accordion) */}
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Histórico de Arquivos</h3>
+            <ScrollArea className="flex-1 pr-2">
+              {loading ? (
+                <div className="text-center py-10 text-gray-400 text-sm">Carregando documentos...</div>
+              ) : (
+                <Accordion type="multiple" className="w-full" defaultValue={["Exames", "Laudos"]}>
+                  {Object.entries(groupedDocs).map(([categoria, items]) => (
+                    <AccordionItem key={categoria} value={categoria} className="border-b-0 mb-2">
+                      <AccordionTrigger className="hover:no-underline py-2 px-3 bg-gray-50 rounded-md text-sm font-semibold text-gray-700 data-[state=open]:bg-gray-100">
+                        {categoria} <span className="ml-auto text-xs bg-white px-2 py-0.5 rounded-full border text-gray-500">{items.length}</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-2 pb-4 px-1">
+                        {items.length === 0 && <div className="text-xs text-gray-400 italic pl-2">Nenhum documento.</div>}
+                        <div className="space-y-2">
+                          {items.map((doc) => {
+                            const date = doc.dataRegistro ? format(parseISO(doc.dataRegistro), "dd/MM/yy HH:mm") : "-";
+                            return (
+                              <div key={doc.idRegistro} className="flex items-center justify-between p-2 rounded-md border hover:bg-gray-50 transition-colors group">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="h-8 w-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                                    <FileText className="h-4 w-4" />
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="text-sm font-medium text-gray-900 truncate" title={doc.tituloDocumento}>
+                                      {doc.tituloDocumento || doc.nomeArquivoOriginal}
+                                    </span>
+                                    <span className="text-[11px] text-gray-500 truncate">
+                                      {date} • {doc.nomeArquivoOriginal}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" 
+                                    onClick={() => downloadProntuario(doc.idRegistro, doc.nomeArquivoOriginal)}>
+                                    <ArrowDownToLine className="h-4 w-4 text-gray-600" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-red-600">
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Excluir arquivo?</AlertDialogTitle>
+                                        <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction className="bg-red-600 hover:bg-red-700"
+                                          onClick={async () => {
+                                            try {
+                                              await deleteProntuario(doc.idRegistro);
+                                              toast.success("Excluído");
+                                              const d = await getPerfilPaciente(patient.idUsuario);
+                                              setPerfil(d);
+                                            } catch { toast.error("Erro ao excluir"); }
+                                          }}>Excluir</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
             </ScrollArea>
           </div>
         </div>

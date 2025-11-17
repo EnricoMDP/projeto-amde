@@ -13,11 +13,18 @@ export interface UsuarioDTO {
   numCelular?: string;
 }
 
+// ATUALIZADO: Reflete o novo ProntuarioDTO do Java
 export interface ProntuarioDTO {
-  idProntuario: number;
-  nomeArquivo: string;
-  dataAtualizacao: string; // ISO
-  displayName?: string;
+  idRegistro: number;          // Antes era idProntuario
+  tituloDocumento: string;     // Novo
+  nomeArquivoOriginal: string; // Novo (o que mostramos na tela)
+  dataRegistro: string;        // Antes era dataAtualizacao (ISO)
+  
+  idCategoria: number;         // Novo
+  nomeCategoria: string;       // Novo
+  
+  // Campos antigos (opcionais ou removidos, dependendo da sua limpeza no Java)
+  // displayName?: string; // Podemos remover se usarmos nomeArquivoOriginal
 }
 
 export interface PerfilPacienteDTO {
@@ -49,7 +56,7 @@ export interface UsuarioUpdatePayload {
   estado?: string;
   cidade?: string;
   rua?: string;
-  dataNasc?: string; // ISO
+  dataNasc?: string;
   nivelAcesso?: "PACIENTE" | "MEDICO" | "ADMINISTRADOR";
   descPaciente?: string;
 }
@@ -63,41 +70,48 @@ export async function deleteUsuario(id: number): Promise<void> {
   await apiClient.delete(`/api/usuarios/${id}`);
 }
 
-// Upload e download de prontuários
-export async function uploadProntuario(idPaciente: number, file: File) {
+// --- ATUALIZADO: Upload com novos campos ---
+export async function uploadProntuario(
+  idPaciente: number, 
+  file: File, 
+  idCategoria: number, 
+  titulo?: string
+) {
   const form = new FormData();
   form.append("idPaciente", String(idPaciente));
   form.append("file", file);
+  form.append("idCategoria", String(idCategoria));
+  if (titulo) {
+    form.append("titulo", titulo);
+  }
+
   const { data } = await apiClient.post<ProntuarioDTO>("/api/prontuarios/upload", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data;
 }
 
-export async function downloadProntuario(idProntuario: number, overrideFilename?: string) {
-  // Busca autenticada (JWT via interceptor) e força download com o nome enviado pelo servidor
-  const response = await apiClient.get(`/api/prontuarios/${idProntuario}/download`, {
+// --- ATUALIZADO: Download usa idRegistro ---
+export async function downloadProntuario(idRegistro: number, overrideFilename?: string) {
+  const response = await apiClient.get(`/api/prontuarios/${idRegistro}/download`, {
     responseType: "blob",
   });
 
-  let filename = overrideFilename || `prontuario-${idProntuario}.pdf`;
-  if (!overrideFilename) {
-    const disposition = (response as any).headers?.["content-disposition"] as string | undefined;
-    if (disposition) {
-      try {
-        // tenta extrair filename*= e filename="..."
-        const matchStar = disposition.match(/filename\*=(?:UTF-8''|)([^;\r\n]+)/i);
-        const matchPlain = disposition.match(/filename="?([^";]+)"?/i);
-        if (matchStar && matchStar[1]) {
-          filename = decodeURIComponent(matchStar[1]);
-        } else if (matchPlain && matchPlain[1]) {
-          filename = matchPlain[1];
-        }
-      } catch {}
-    }
+  let filename = overrideFilename || `documento-${idRegistro}.pdf`;
+  
+  // Tenta pegar o nome real do header (que configuramos no Controller Java)
+  const disposition = (response as any).headers?.["content-disposition"] as string | undefined;
+  if (!overrideFilename && disposition) {
+    try {
+      const matchStar = disposition.match(/filename\*=(?:UTF-8''|)([^;\r\n]+)/i);
+      const matchPlain = disposition.match(/filename="?([^";]+)"?/i);
+      if (matchStar && matchStar[1]) {
+        filename = decodeURIComponent(matchStar[1]);
+      } else if (matchPlain && matchPlain[1]) {
+        filename = matchPlain[1];
+      }
+    } catch {}
   }
-  // garante extensão .pdf
-  if (!filename.toLowerCase().endsWith('.pdf')) filename += '.pdf';
 
   const blob = new Blob([response.data], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
@@ -110,6 +124,7 @@ export async function downloadProntuario(idProntuario: number, overrideFilename?
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-export async function deleteProntuario(idProntuario: number) {
-  await apiClient.delete(`/api/prontuarios/${idProntuario}`);
+// --- ATUALIZADO: Delete usa idRegistro ---
+export async function deleteProntuario(idRegistro: number) {
+  await apiClient.delete(`/api/prontuarios/${idRegistro}`);
 }

@@ -22,18 +22,25 @@ public class ProntuarioController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProntuarioDTO> uploadProntuario(
         @RequestParam("idPaciente") Long idPaciente,
-        @RequestParam("file") MultipartFile file
+        @RequestParam("file") MultipartFile file,
+        @RequestParam("idCategoria") Long idCategoria, // Novo campo obrigatório
+        @RequestParam(value = "titulo", required = false) String titulo // Novo campo opcional
     ) {
-        ProntuarioDTO dto = prontuarioService.salvarProntuario(idPaciente, file);
+        // Agora chamamos o serviço passando os 4 parâmetros
+        ProntuarioDTO dto = prontuarioService.salvarProntuario(idPaciente, file, idCategoria, titulo);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> download(@PathVariable Long id) {
         Resource resource = prontuarioService.carregarProntuario(id);
-        String filename = prontuarioService.obterNomeArquivoPadrao(id);
+        
+        // Usamos o método novo para pegar o nome amigável (ex: "Raio-X.pdf")
+        String filename = prontuarioService.obterNomeOriginal(id);
+        
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_PDF)
+            // O header abaixo garante que o navegador salve com o nome correto
             .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"; filename*=UTF-8''" + filename)
             .body(resource);
     }

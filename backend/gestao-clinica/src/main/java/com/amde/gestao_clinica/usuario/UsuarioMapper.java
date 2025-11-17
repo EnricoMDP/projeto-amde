@@ -19,7 +19,8 @@ public interface UsuarioMapper {
     @Mapping(source = "descPaciente", target = "descricao")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuario", ignore = true)
-    @Mapping(target = "historicoProntuarios", ignore = true)
-    @Mapping(target = "prontuarioRecente", ignore = true)
+    // CORRIGIDO: Nome da variável em minúsculo (registroProntuarios)
+    @Mapping(target = "registroProntuarios", ignore = true)
+    // REMOVIDO: @Mapping(target = "prontuarioRecente", ignore = true) (Campo não existe mais)
     Paciente toPaciente(UsuarioCadastroDTO dto);
 }

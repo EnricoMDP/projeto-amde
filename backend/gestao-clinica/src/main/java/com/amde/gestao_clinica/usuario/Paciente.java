@@ -1,12 +1,11 @@
 package com.amde.gestao_clinica.usuario;
 
 import java.util.ArrayList;
-
-import com.amde.gestao_clinica.prontuario.HistoricoProntuario;
-
+import java.util.List;
 import jakarta.persistence.*;
 
-import java.util.List;
+import com.amde.gestao_clinica.prontuario.RegistroProntuario;
+
 
 @Entity
 @Table(name = "pacientes")
@@ -23,14 +22,13 @@ public class Paciente {
 
     @Column(name = "desc_paciente")
     private String descricao;
-    
-    @Column(name = "prontuario_recente")
-    private Integer prontuarioRecente;
 
+    // Alterado: Tipo mudou para RegistroProntuario e nome da variável para minúsculo
     @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<HistoricoProntuario> historicoProntuarios = new ArrayList<>();
+    private List<RegistroProntuario> registroProntuarios = new ArrayList<>();
 
-    //Getter e setters
+    // --- Getters e Setters ---
+
     public Long getId() {
         return id;
     }
@@ -55,19 +53,13 @@ public class Paciente {
         this.descricao = descricao;
     }
 
-    public Integer getProntuarioRecente() {
-        return prontuarioRecente;
+    // REMOVIDOS: getProntuarioRecente e setProntuarioRecente (pois o campo não existe mais)
+
+    public List<RegistroProntuario> getRegistroProntuarios() {
+        return registroProntuarios;
     }
 
-    public void setProntuarioRecente(Integer prontuarioRecente) {
-        this.prontuarioRecente = prontuarioRecente;
+    public void setRegistroProntuarios(List<RegistroProntuario> registroProntuarios) {
+        this.registroProntuarios = registroProntuarios;
     }
-
-    public List<HistoricoProntuario> getHistoricoProntuarios() {
-        return historicoProntuarios;
-    }
-
-    public void setHistoricoProntuarios(List<HistoricoProntuario> historicoProntuarios) {
-        this.historicoProntuarios = historicoProntuarios;
-    }    
 }

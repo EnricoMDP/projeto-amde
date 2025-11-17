@@ -1,12 +1,12 @@
 package com.amde.gestao_clinica.usuario;
 
+import com.amde.gestao_clinica.prontuario.RegistroProntuario;
+import com.amde.gestao_clinica.prontuario.RegistroProntuarioMapper;
+import com.amde.gestao_clinica.prontuario.RegistroProntuarioRepository;
+import com.amde.gestao_clinica.util.JwtUtil;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import com.amde.gestao_clinica.util.JwtUtil;
-import com.amde.gestao_clinica.prontuario.HistoricoProntuario;
-import com.amde.gestao_clinica.prontuario.HistoricoProntuarioRepository;
 
 import java.util.List;
 
@@ -16,30 +16,32 @@ public class UsuarioService {
     private final UsuarioRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final UsuarioMapper mapper;
-    private final HistoricoProntuarioRepository historicoRepository;
-    // MapStruct mapper removed from here; we'll map HistoricoProntuario -> ProntuarioDTO manually
+    private final UsuarioMapper usuarioMapper;
+    private final RegistroProntuarioRepository registroRepository; // Renomeado
+    private final RegistroProntuarioMapper registroProntuarioMapper; // Novo mapper injetado
 
     public UsuarioService(UsuarioRepository repository,
                           PasswordEncoder passwordEncoder,
                           JwtUtil jwtUtil,
-                          UsuarioMapper mapper,
-                          HistoricoProntuarioRepository historicoRepository) {
+                          UsuarioMapper usuarioMapper,
+                          RegistroProntuarioRepository registroRepository,
+                          RegistroProntuarioMapper registroProntuarioMapper) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-        this.mapper = mapper;
-        this.historicoRepository = historicoRepository;
+        this.usuarioMapper = usuarioMapper;
+        this.registroRepository = registroRepository;
+        this.registroProntuarioMapper = registroProntuarioMapper;
     }
 
     public List<UsuarioDTO> listarTodos() { 
         return repository.findAll().stream()
-                .map(mapper::toDTO).toList();
+                .map(usuarioMapper::toDTO).toList();
     }
 
     public List<UsuarioDTO> listarPorNivel(NivelAcesso nivel) {
         return repository.findByNivelAcesso(nivel).stream()
-                .map(mapper::toDTO)
+                .map(usuarioMapper::toDTO)
                 .toList();
     }
 
@@ -49,17 +51,17 @@ public class UsuarioService {
             throw new BusinessException("Email já cadastrado");
         }
 
-        Usuario usuario = mapper.toEntity(dto);
+        Usuario usuario = usuarioMapper.toEntity(dto);
         usuario.setSenha(passwordEncoder.encode(dto.senha()));
 
         if (dto.nivelAcesso() == NivelAcesso.PACIENTE) {
-            Paciente paciente = mapper.toPaciente(dto);
+            Paciente paciente = usuarioMapper.toPaciente(dto);
             paciente.setUsuario(usuario);
             usuario.setPaciente(paciente);
         }
 
         Usuario salvo = repository.save(usuario);
-        return mapper.toDTO(salvo);
+        return usuarioMapper.toDTO(salvo);
     }
 
     public String login(UsuarioLoginDTO dto) {
@@ -70,13 +72,12 @@ public class UsuarioService {
             throw new BusinessException("Usuário ou senha inválidos");
         }
 
-    // Token com claims uid, role e nome completo
-    return jwtUtil.generateToken(
-        usuario.getId(),
-        usuario.getEmail(),
-        usuario.getNivelAcesso().name(),
-        usuario.getNome()
-    );
+        return jwtUtil.generateToken(
+            usuario.getId(),
+            usuario.getEmail(),
+            usuario.getNivelAcesso().name(),
+            usuario.getNome()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -93,39 +94,16 @@ public class UsuarioService {
             throw new ResourceNotFoundException("Paciente não encontrado para o usuário");
         }
 
-        List<HistoricoProntuario> historicos = historicoRepository
-                .findByPacienteIdOrderByDataAtualizacaoDesc(paciente.getId());
+        // BUSCA ATUALIZADA: Usa o novo método do repositório que filtra substituídos
+        List<RegistroProntuario> registros = registroRepository
+                .findByPacienteIdAndRegistroSubstituidoIsNullOrderByCategoriaIdCategoriaAscDataRegistroDesc(paciente.getId());
 
-        List<ProntuarioDTO> prontuarios = historicos.stream()
-                .map(h -> {
-                    ProntuarioDTO dto = new ProntuarioDTO();
-                    dto.setIdProntuario(h.getId());
-                    dto.setNomeArquivo(h.getNomeArquivo());
-                    dto.setDataAtualizacao(h.getDataAtualizacao());
-                    // displayName será definido abaixo
-                    return dto;
-                })
+        // MAPEAMENTO SIMPLIFICADO: Usa o MapStruct
+        List<ProntuarioDTO> prontuarios = registros.stream()
+                .map(registroProntuarioMapper::toDTO)
                 .toList();
 
-        // Preenche displayName com sequência estável baseada em id crescente
-        var ordenados = historicos.stream().sorted((a,b) -> Long.compare(a.getId(), b.getId())).toList();
-        for (int i = 0; i < ordenados.size(); i++) {
-            Long id = ordenados.get(i).getId();
-            for (ProntuarioDTO p : prontuarios) {
-                if (p.getIdProntuario().equals(id)) {
-                    // se nomeArquivo já é padronizado (novos registros), use-o como display
-                    if (p.getNomeArquivo() != null && !p.getNomeArquivo().isBlank()) {
-                        p.setDisplayName(p.getNomeArquivo());
-                    } else {
-                        String base = usuario.getNome() == null ? "paciente" : usuario.getNome().trim().replaceAll("[^a-zA-Z0-9]+", "_");
-                        p.setDisplayName(base + "_prt" + (i + 1) + ".pdf");
-                    }
-                    break;
-                }
-            }
-        }
-
-        UsuarioDTO usuarioDTO = mapper.toDTO(usuario);
+        UsuarioDTO usuarioDTO = usuarioMapper.toDTO(usuario);
 
         return new PerfilPacienteDTO(usuarioDTO, paciente.getDescricao(), prontuarios);
     }
@@ -151,13 +129,11 @@ public class UsuarioService {
         if (dto.nivelAcesso() != null && dto.nivelAcesso() != usuario.getNivelAcesso()) {
             usuario.setNivelAcesso(dto.nivelAcesso());
             if (dto.nivelAcesso() == NivelAcesso.PACIENTE && usuario.getPaciente() == null) {
-                // promover para paciente
                 Paciente paciente = new Paciente();
                 paciente.setUsuario(usuario);
                 if (dto.descPaciente() != null) paciente.setDescricao(dto.descPaciente());
                 usuario.setPaciente(paciente);
             } else if (dto.nivelAcesso() != NivelAcesso.PACIENTE && usuario.getPaciente() != null) {
-                // remover vínculo de paciente
                 usuario.setPaciente(null);
             }
         }
@@ -169,7 +145,7 @@ public class UsuarioService {
         }
 
         Usuario salvo = repository.save(usuario);
-        return mapper.toDTO(salvo);
+        return usuarioMapper.toDTO(salvo);
     }
 
     @Transactional
