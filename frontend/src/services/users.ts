@@ -30,6 +30,7 @@ export interface ProntuarioDTO {
 export interface PerfilPacienteDTO {
   usuario: UsuarioDTO;
   descricao: string | null;
+  grauSuporte?: number;
   prontuarios: ProntuarioDTO[];
 }
 

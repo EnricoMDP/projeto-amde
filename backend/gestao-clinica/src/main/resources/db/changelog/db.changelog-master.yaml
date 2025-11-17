@@ -225,3 +225,5 @@ databaseChangeLog:
       file: db/changelog/inserts/003-update-admin-password.yaml 
   - include:
       file: db/changelog/inserts/004-refatoracao-prontuarios.yaml
+  - include:
+      file: db/changelog/005-add-grau-suporte.yaml

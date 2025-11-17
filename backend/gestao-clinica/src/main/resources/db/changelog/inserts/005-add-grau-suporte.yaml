@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-1-add-grau-suporte
+      author: enrico
+      changes:
+        - addColumn:
+            tableName: pacientes
+            columns:
+              - column:
+                  name: grau_suporte
+                  type: int
+                  remarks: "Nível de suporte do autismo (1, 2 ou 3)"

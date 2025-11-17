@@ -150,6 +150,13 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
                <div className="text-sm">{patient?.numCelular || "-"}</div>
             </div>
             
+            {/* Novo Bloco */}
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500">Grau de Suporte</div>
+              <div className="font-semibold text-gray-900">
+                {perfil?.grauSuporte ? `Nível ${perfil.grauSuporte}` : "-"}
+              </div>
+            </div>
             <Separator />
             
             <div className="flex-1 flex flex-col gap-2">

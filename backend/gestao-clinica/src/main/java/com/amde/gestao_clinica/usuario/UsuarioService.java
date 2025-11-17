@@ -105,7 +105,7 @@ public class UsuarioService {
 
         UsuarioDTO usuarioDTO = usuarioMapper.toDTO(usuario);
 
-        return new PerfilPacienteDTO(usuarioDTO, paciente.getDescricao(), prontuarios);
+        return new PerfilPacienteDTO(usuarioDTO, paciente.getDescricao(), paciente.getGrauSuporte(), prontuarios);
     }
 
     @Transactional

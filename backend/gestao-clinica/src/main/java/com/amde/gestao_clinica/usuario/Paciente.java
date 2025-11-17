@@ -23,6 +23,9 @@ public class Paciente {
     @Column(name = "desc_paciente")
     private String descricao;
 
+    @Column(name = "grau_suporte")
+    private Integer grauSuporte; // Novo campo
+
     // Alterado: Tipo mudou para RegistroProntuario e nome da variável para minúsculo
     @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<RegistroProntuario> registroProntuarios = new ArrayList<>();
@@ -62,4 +65,15 @@ public class Paciente {
     public void setRegistroProntuarios(List<RegistroProntuario> registroProntuarios) {
         this.registroProntuarios = registroProntuarios;
     }
+    
+    public Integer getGrauSuporte() {
+        return grauSuporte;
+    }
+
+    public void setGrauSuporte(Integer grauSuporte) {
+        this.grauSuporte = grauSuporte;
+    }
+
+
 }
+

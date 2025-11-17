@@ -9,7 +9,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PerfilPacienteDTO {
-    private UsuarioDTO usuario;      // dados pessoais já existentes (reúso do UsuarioDTO)
-    private String descricao;        // desc_paciente
-    private List<ProntuarioDTO> prontuarios; // lista completa de prontuários
+    private UsuarioDTO usuario;
+    private String descricao;
+    private Integer grauSuporte; // Novo campo
+    private List<ProntuarioDTO> prontuarios;
 }
