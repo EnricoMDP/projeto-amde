@@ -226,4 +226,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/inserts/004-refatoracao-prontuarios.yaml
   - include:
-      file: db/changelog/005-add-grau-suporte.yaml
+      file: db/changelog/inserts/005-add-grau-suporte.yaml
