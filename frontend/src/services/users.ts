@@ -60,6 +60,7 @@ export interface UsuarioUpdatePayload {
   dataNasc?: string;
   nivelAcesso?: "PACIENTE" | "MEDICO" | "ADMINISTRADOR";
   descPaciente?: string;
+  grauSuporte?: number; // 1, 2 ou 3 - usado quando PACIENTE
 }
 
 export async function updateUsuario(id: number, payload: UsuarioUpdatePayload): Promise<UsuarioDTO> {

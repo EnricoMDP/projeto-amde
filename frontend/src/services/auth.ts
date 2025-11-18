@@ -17,6 +17,7 @@ export interface RegisterPayload {
   rua?: string;
   numCelular?: string;
   descPaciente?: string; // usado quando PACIENTE
+  grauSuporte?: number; // 1, 2 ou 3 - usado quando PACIENTE
 }
 
 export async function login(payload: LoginPayload): Promise<string> {

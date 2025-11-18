@@ -22,7 +22,10 @@ public record UsuarioCadastroDTO(
     NivelAcesso nivelAcesso, // Ex: "PACIENTE", "MEDICO"
 
     // Informação específica do paciente, pode ser nula se o usuário não for paciente
-    String descPaciente, 
+    String descPaciente,
+    
+    // Grau de suporte do autismo (1, 2 ou 3) - apenas para pacientes
+    Integer grauSuporte,
 
     // Outros campos do usuário
     LocalDate dataNasc,

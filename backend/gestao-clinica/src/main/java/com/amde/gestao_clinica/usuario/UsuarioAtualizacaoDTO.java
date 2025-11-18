@@ -12,5 +12,6 @@ public record UsuarioAtualizacaoDTO(
         String rua,
         LocalDate dataNasc,
         NivelAcesso nivelAcesso,
-        String descPaciente // relevante quando PACIENTE
+        String descPaciente, // relevante quando PACIENTE
+        Integer grauSuporte // Grau de suporte do autismo (1, 2 ou 3) - apenas para pacientes
 ) {}

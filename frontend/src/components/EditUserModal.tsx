@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { type UsuarioDTO, updateUsuario } from "@/services/users";
+import { type UsuarioDTO, updateUsuario, getPerfilPaciente } from "@/services/users";
 
 type Nivel = "PACIENTE" | "MEDICO" | "ADMINISTRADOR";
 
@@ -30,6 +30,7 @@ export default function EditUserModal({ open, onOpenChange, user, onSuccess }: E
     email: "",
     nivelAcesso: "PACIENTE" as Nivel,
     descPaciente: "",
+    grauSuporte: "", // 1, 2 ou 3 (string para facilitar o Select)
     dataNasc: "",
     pais: "",
     estado: "",
@@ -39,20 +40,60 @@ export default function EditUserModal({ open, onOpenChange, user, onSuccess }: E
   });
 
   useEffect(() => {
-    if (user) {
-      setForm({
-        nome: user.nome || "",
-        email: user.email || "",
-        nivelAcesso: user.nivelAcesso,
-        descPaciente: "", // backend retorna no perfil; aqui deixamos opcional
-        dataNasc: user.dataNasc || "",
-        pais: user.pais || "",
-        estado: user.estado || "",
-        cidade: user.cidade || "",
-        rua: user.rua || "",
-        numCelular: user.numCelular || "",
-      });
+    async function loadUser() {
+      if (user) {
+        // Se for paciente, busca o perfil completo para pegar descPaciente e grauSuporte
+        if (user.nivelAcesso === "PACIENTE") {
+          try {
+            const perfil = await getPerfilPaciente(user.idUsuario);
+            setForm({
+              nome: user.nome || "",
+              email: user.email || "",
+              nivelAcesso: user.nivelAcesso,
+              descPaciente: perfil.descricao || "",
+              grauSuporte: perfil.grauSuporte ? String(perfil.grauSuporte) : "",
+              dataNasc: user.dataNasc || "",
+              pais: user.pais || "",
+              estado: user.estado || "",
+              cidade: user.cidade || "",
+              rua: user.rua || "",
+              numCelular: user.numCelular || "",
+            });
+          } catch (err: any) {
+            // Se falhar ao buscar perfil, usa só os dados básicos
+            console.error("Erro ao carregar perfil do paciente:", err);
+            setForm({
+              nome: user.nome || "",
+              email: user.email || "",
+              nivelAcesso: user.nivelAcesso,
+              descPaciente: "",
+              grauSuporte: "",
+              dataNasc: user.dataNasc || "",
+              pais: user.pais || "",
+              estado: user.estado || "",
+              cidade: user.cidade || "",
+              rua: user.rua || "",
+              numCelular: user.numCelular || "",
+            });
+          }
+        } else {
+          setForm({
+            nome: user.nome || "",
+            email: user.email || "",
+            nivelAcesso: user.nivelAcesso,
+            descPaciente: "",
+            grauSuporte: "",
+            dataNasc: user.dataNasc || "",
+            pais: user.pais || "",
+            estado: user.estado || "",
+            cidade: user.cidade || "",
+            rua: user.rua || "",
+            numCelular: user.numCelular || "",
+          });
+        }
+      }
     }
+    loadUser();
   }, [user]);
 
   const isPaciente = useMemo(() => form.nivelAcesso === "PACIENTE", [form.nivelAcesso]);
@@ -72,6 +113,7 @@ export default function EditUserModal({ open, onOpenChange, user, onSuccess }: E
         email: form.email,
         nivelAcesso: form.nivelAcesso,
         descPaciente: isPaciente && form.descPaciente ? form.descPaciente : undefined,
+        grauSuporte: isPaciente && form.grauSuporte ? parseInt(form.grauSuporte) : undefined,
         dataNasc: form.dataNasc || undefined,
         pais: form.pais || undefined,
         estado: form.estado || undefined,
@@ -132,6 +174,22 @@ export default function EditUserModal({ open, onOpenChange, user, onSuccess }: E
             <div className="space-y-2">
               <Label>Descrição do paciente</Label>
               <Textarea value={form.descPaciente} onChange={(e) => setField("descPaciente", e.target.value)} />
+            </div>
+          )}
+
+          {isPaciente && (
+            <div className="space-y-2">
+              <Label>Grau de suporte (TEA)</Label>
+              <Select value={form.grauSuporte} onValueChange={(v) => setField("grauSuporte", v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o nível de suporte" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Nível 1 - Requer apoio</SelectItem>
+                  <SelectItem value="2">Nível 2 - Requer apoio substancial</SelectItem>
+                  <SelectItem value="3">Nível 3 - Requer apoio muito substancial</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 

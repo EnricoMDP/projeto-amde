@@ -31,6 +31,7 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
     confirmarSenha: "",
     nivelAcesso: "PACIENTE" as Nivel,
     descPaciente: "",
+    grauSuporte: "", // 1, 2 ou 3 (string para facilitar o Select)
     dataNasc: "",
     pais: "",
     estado: "",
@@ -101,6 +102,7 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
       senha: form.senha,
       nivelAcesso: form.nivelAcesso,
       descPaciente: isPaciente && form.descPaciente ? form.descPaciente : undefined,
+      grauSuporte: isPaciente && form.grauSuporte ? parseInt(form.grauSuporte) : undefined,
       dataNasc: form.dataNasc || undefined,
       pais: form.pais || undefined,
       estado: form.estado || undefined,
@@ -123,6 +125,7 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
         confirmarSenha: "",
         nivelAcesso: "PACIENTE",
         descPaciente: "",
+        grauSuporte: "",
         dataNasc: "",
         pais: "",
         estado: "",
@@ -191,6 +194,22 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
             <div className="space-y-2">
               <Label>Descrição do paciente</Label>
               <Textarea value={form.descPaciente} onChange={(e) => setField("descPaciente", e.target.value)} placeholder="Condição, observações, etc." />
+            </div>
+          )}
+
+          {isPaciente && (
+            <div className="space-y-2">
+              <Label>Grau de suporte (TEA)</Label>
+              <Select value={form.grauSuporte} onValueChange={(v) => setField("grauSuporte", v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o nível de suporte" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Nível 1 - Requer apoio</SelectItem>
+                  <SelectItem value="2">Nível 2 - Requer apoio substancial</SelectItem>
+                  <SelectItem value="3">Nível 3 - Requer apoio muito substancial</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 

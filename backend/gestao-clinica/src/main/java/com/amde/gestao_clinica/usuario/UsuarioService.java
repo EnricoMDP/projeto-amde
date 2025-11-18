@@ -57,6 +57,10 @@ public class UsuarioService {
         if (dto.nivelAcesso() == NivelAcesso.PACIENTE) {
             Paciente paciente = usuarioMapper.toPaciente(dto);
             paciente.setUsuario(usuario);
+            // Define o grauSuporte se fornecido
+            if (dto.grauSuporte() != null) {
+                paciente.setGrauSuporte(dto.grauSuporte());
+            }
             usuario.setPaciente(paciente);
         }
 
@@ -132,15 +136,19 @@ public class UsuarioService {
                 Paciente paciente = new Paciente();
                 paciente.setUsuario(usuario);
                 if (dto.descPaciente() != null) paciente.setDescricao(dto.descPaciente());
+                if (dto.grauSuporte() != null) paciente.setGrauSuporte(dto.grauSuporte());
                 usuario.setPaciente(paciente);
             } else if (dto.nivelAcesso() != NivelAcesso.PACIENTE && usuario.getPaciente() != null) {
                 usuario.setPaciente(null);
             }
         }
 
-        if (usuario.getNivelAcesso() == NivelAcesso.PACIENTE && dto.descPaciente() != null) {
-            if (usuario.getPaciente() != null) {
+        if (usuario.getNivelAcesso() == NivelAcesso.PACIENTE && usuario.getPaciente() != null) {
+            if (dto.descPaciente() != null) {
                 usuario.getPaciente().setDescricao(dto.descPaciente());
+            }
+            if (dto.grauSuporte() != null) {
+                usuario.getPaciente().setGrauSuporte(dto.grauSuporte());
             }
         }
 
