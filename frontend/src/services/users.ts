@@ -11,6 +11,7 @@ export interface UsuarioDTO {
   cidade?: string;
   rua?: string;
   numCelular?: string;
+  grauSuporte?: number; // 1, 2 ou 3 - apenas para pacientes
 }
 
 // ATUALIZADO: Reflete o novo ProntuarioDTO do Java

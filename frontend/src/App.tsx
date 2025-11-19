@@ -10,6 +10,7 @@ import AdminLayout from "./pages/AdminLayout";
 import AdminUsers from "./pages/AdminUsers";
 import { getAuth, type Role } from "@/lib/auth";
 import Patients from "./pages/Patients";
+import Appointments from "./pages/Appointments";
 import { ReactNode } from "react";
 import { useAuth } from "./contexts/AuthContext";
 
@@ -32,6 +33,11 @@ const App = () => (
             {/* Todas as rotas aqui dentro requerem login e usam o AdminLayout */}
             
             <Route path="/overview" element={<div className="p-6"><h1 className="text-2xl font-bold">Visão G</h1></div>} />
+
+            {/* Nova Rota: Agendamentos (Permite Médico e Admin) */}
+            <Route element={<RequireRole roles={["ADMINISTRADOR", "MEDICO"]} />}>
+              <Route path="/appointments" element={<Appointments />} /> 
+            </Route>
 
             {/* Agrupamento de rotas que requerem papel de MÉDICO ou superior */}
             <Route element={<RequireRole roles={["ADMINISTRADOR", "MEDICO"]} />}>

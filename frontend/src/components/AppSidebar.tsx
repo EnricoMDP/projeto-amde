@@ -1,5 +1,5 @@
 
-import { Users, BarChart3, UserCheck, LogOut } from "lucide-react";
+import { Users, BarChart3, UserCheck, LogOut, CalendarCheck } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Sidebar,
@@ -28,6 +28,11 @@ const menuItems = [
     icon: UserCheck,
   },
   {
+    title: "Agendamentos",
+    url: "/appointments",
+    icon: CalendarCheck,
+  },
+  {
     title: "Usuários",
     url: "/admin/users",
     icon: Users,
@@ -43,7 +48,7 @@ export function AppSidebar() {
     if (item.url === "/admin/users") {
       return role === "ADMINISTRADOR"; // somente admin
     }
-    if (item.url === "/patients") {
+    if (item.url === "/patients" || item.url === "/appointments") { // <--- Adicione /appointments aqui
       return role === "ADMINISTRADOR" || role === "MEDICO"; // admin e médico
     }
     // visão geral disponível para todos autenticados

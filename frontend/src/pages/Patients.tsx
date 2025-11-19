@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Users, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -80,6 +81,24 @@ const Patients = () => {
       default:
         return nivel;
     }
+  };
+
+  const getGrauSuporteColor = (grau: number | null | undefined) => {
+    switch (grau) {
+      case 1:
+        return "bg-green-100 text-green-800";
+      case 2:
+        return "bg-yellow-100 text-yellow-800";
+      case 3:
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  const getGrauSuporteLabel = (grau: number | null | undefined) => {
+    if (!grau) return "Não informado";
+    return `Nível ${grau}`;
   };
 
   const visibleUsers = useMemo(() => {
@@ -170,6 +189,7 @@ const Patients = () => {
                   <TableHead className="font-semibold text-gray-700">
                     <button className="inline-flex items-center gap-1" onClick={() => setSortKey("nivel")}>Nível de Acesso</button>
                   </TableHead>
+                  <TableHead className="font-semibold text-gray-700">Grau de Suporte</TableHead>
                   <TableHead className="font-semibold text-gray-700">Data de Nascimento</TableHead>
                   <TableHead className="font-semibold text-gray-700">País</TableHead>
                   <TableHead className="font-semibold text-gray-700">Estado</TableHead>
@@ -181,21 +201,21 @@ const Patients = () => {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-6 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-6 text-gray-500">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && error && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-6 text-red-600">
+                    <TableCell colSpan={11} className="text-center py-6 text-red-600">
                       {error}
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && !error && visibleUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-6 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-6 text-gray-500">
                       Nenhum paciente encontrado
                     </TableCell>
                   </TableRow>
@@ -219,6 +239,11 @@ const Patients = () => {
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAccessLevelColor(user.nivelAcesso)}`}>
                           {getAccessLevelLabel(user.nivelAcesso)}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getGrauSuporteColor(user.grauSuporte)}>
+                          {getGrauSuporteLabel(user.grauSuporte)}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-gray-600">{birth}</TableCell>
                       <TableCell className="text-gray-600">{user.pais ?? "-"}</TableCell>

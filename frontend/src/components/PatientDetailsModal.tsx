@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ArrowDownToLine, Trash2, FileText, User as UserIcon, Upload } from "lucide-react";
 import { getPerfilPaciente, uploadProntuario, downloadProntuario, deleteProntuario, updateUsuario, type PerfilPacienteDTO, type UsuarioDTO } from "@/services/users";
 import { format, parseISO } from "date-fns";
@@ -39,6 +40,25 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
   const [docTitle, setDocTitle] = useState("");
   
   const [savingInfo, setSavingInfo] = useState(false);
+
+  // Funções auxiliares para badge do grau de suporte
+  const getGrauSuporteColor = (grau: number | null | undefined) => {
+    switch (grau) {
+      case 1:
+        return "bg-green-100 text-green-800 border-green-200";
+      case 2:
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case 3:
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      default:
+        return "bg-gray-100 text-gray-600 border-gray-200";
+    }
+  };
+
+  const getGrauSuporteLabel = (grau: number | null | undefined) => {
+    if (!grau) return "Não informado";
+    return `Nível ${grau}`;
+  };
 
   useEffect(() => {
     let active = true;
@@ -152,10 +172,10 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
             
             {/* Novo Bloco */}
             <div className="space-y-1">
-              <div className="text-xs text-gray-500">Grau de Suporte</div>
-              <div className="font-semibold text-gray-900">
-                {perfil?.grauSuporte ? `Nível ${perfil.grauSuporte}` : "-"}
-              </div>
+              <label className="text-xs font-medium text-gray-500 uppercase">Grau de Suporte</label>
+              <Badge className={getGrauSuporteColor(perfil?.grauSuporte)}>
+                {getGrauSuporteLabel(perfil?.grauSuporte)}
+              </Badge>
             </div>
             <Separator />
             
