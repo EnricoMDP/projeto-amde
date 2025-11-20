@@ -1,0 +1,85 @@
+name: Deploy Frontend
+
+# GATILHOS (ON)
+# 1. Automático: Dispara quando há um push na branch main na pasta frontend
+# 2. Manual: Permite rodar manualmente (para injetar IPs de teste)
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      
+  workflow_dispatch:
+    inputs:
+      TARGET_IP:
+        description: 'IP Público do EC2 para a API (Opcional. Deixe em branco para Prod)'
+        required: false
+
+# VARIÁVEIS DE AMBIENTE (CONFIGURAÇÃO)
+env:
+  # IP de Produção (Seu IP atual)
+  IP_PROD_PADRAO: '54.233.239.101' 
+  CLOUDFRONT_DISTRIBUTION_ID: 'E3ERVQZQD59RW'
+  S3_BUCKET_NAME: 'amde-app-frontend-prod'
+  AWS_REGION: 'sa-east-1'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Determinar o IP a ser usado (Função que decide se usa o IP de teste ou o de Prod)
+      - name: Determine Target IP
+        id: determine_ip
+        run: |
+          # Checa se o workflow foi acionado manualmente E se um IP foi fornecido.
+          INPUT_IP="${{ github.event.inputs.TARGET_IP }}"
+          
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "$INPUT_IP" ]; then
+            echo "IP_FINAL=$INPUT_IP" >> $GITHUB_ENV
+            echo "EXECUTANDO DEPLOY MANUAL (IP: $INPUT_IP)"
+          else
+            echo "IP_FINAL=${{ env.IP_PROD_PADRAO }}" >> $GITHUB_ENV
+            echo "EXECUTANDO DEPLOY AUTOMÁTICO PARA PRODUÇÃO"
+          fi
+
+      # 2. Checkout e Setup Node
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Build project
+      - name: Build project
+        run: npm run build
+        working-directory: ./frontend
+
+      # 4. Injetar URL da API (Substituindo o placeholder $$API_IP_ADDRESS$$)
+      - name: Inject API URL into Build Output
+        run: |
+          # O 'sed' substitui o placeholder $$API_IP_ADDRESS$$ pelo IP determinado
+          find ./frontend/dist -type f -name "*.js" -exec sed -i "s|$$API_IP_ADDRESS$$|http://${{ env.IP_FINAL }}:8080|g" {} \;
+
+      # 5. Configurar Credenciais AWS (Instala o AWS CLI)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 6. Deploy Static Files to S3
+      - name: Deploy static files to S3
+        run: |
+          aws s3 sync ./frontend/dist s3://${{ env.S3_BUCKET_NAME }} --delete
+
+      # 7. Invalidar CloudFront (APENAS SE FOR DEPLOY DE PRODUÇÃO)
+      - name: Invalidate CloudFront cache
+        # Só executa se o IP usado for o IP de produção padrão (preservando o ambiente de teste)
+        if: ${{ env.IP_FINAL == env.IP_PROD_PADRAO }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
