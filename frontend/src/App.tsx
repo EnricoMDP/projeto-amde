@@ -32,7 +32,7 @@ const App = () => (
           <Route element={<RequireAuth><AdminLayout /></RequireAuth>}>
             {/* Todas as rotas aqui dentro requerem login e usam o AdminLayout */}
             
-            <Route path="/overview" element={<div className="p-6"><h1 className="text-2xl font-bold">Visão Geral</h1></div>} />
+            <Route path="/overview" element={<div className="p-6"><h1 className="text-2xl font-bold">Visão Gera</h1></div>} />
 
             {/* Nova Rota: Agendamentos (Permite Médico e Admin) */}
             <Route element={<RequireRole roles={["ADMINISTRADOR", "MEDICO"]} />}>
