@@ -29,11 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      # 1. Determinar o IP a ser usado (Função que decide se usa o IP de teste ou o de Prod)
+      # 1. Determinar o IP a ser usado
       - name: Determine Target IP
         id: determine_ip
         run: |
-          # Checa se o workflow foi acionado manualmente E se um IP foi fornecido.
           INPUT_IP="${{ github.event.inputs.TARGET_IP }}"
           
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "$INPUT_IP" ]; then
@@ -53,15 +52,17 @@ jobs:
         with:
           node-version: '20'
 
-      # 3. Build project
-      - name: Build project
-        run: npm run build
+      # 3. Build project (CORRIGIDO: Instala dependências antes de buildar)
+      - name: Install dependencies and build project
+        run: |
+          npm install
+          npm run build
         working-directory: ./frontend
 
-      # 4. Injetar URL da API (Substituindo o placeholder $$API_IP_ADDRESS$$)
+      # 4. Injetar URL da API (Substituindo o placeholder)
       - name: Inject API URL into Build Output
         run: |
-          # O 'sed' substitui o placeholder $$API_IP_ADDRESS$$ pelo IP determinado
+          # O 'sed' substitui o placeholder $$API_IP_ADDRESS$$ pelo IP final
           find ./frontend/dist -type f -name "*.js" -exec sed -i "s|$$API_IP_ADDRESS$$|http://${{ env.IP_FINAL }}:8080|g" {} \;
 
       # 5. Configurar Credenciais AWS (Instala o AWS CLI)
@@ -79,7 +80,6 @@ jobs:
 
       # 7. Invalidar CloudFront (APENAS SE FOR DEPLOY DE PRODUÇÃO)
       - name: Invalidate CloudFront cache
-        # Só executa se o IP usado for o IP de produção padrão (preservando o ambiente de teste)
         if: ${{ env.IP_FINAL == env.IP_PROD_PADRAO }}
         run: |
           aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
