@@ -20,7 +20,7 @@ on:
 env:
   # IP de Produção (Seu IP atual)
   IP_PROD_PADRAO: '54.233.239.101' 
-  CLOUDFRONT_DISTRIBUTION_ID: 'E3ERVQZQD59RW'
+  CLOUDFRONT_DISTRIBUTION_ID: 'E3ERVQZQ0D59RW'
   S3_BUCKET_NAME: 'amde-app-frontend-prod'
   AWS_REGION: 'sa-east-1'
 
