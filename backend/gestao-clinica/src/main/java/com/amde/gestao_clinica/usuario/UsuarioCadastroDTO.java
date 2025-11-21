@@ -27,6 +27,9 @@ public record UsuarioCadastroDTO(
     // Grau de suporte do autismo (1, 2 ou 3) - apenas para pacientes
     Integer grauSuporte,
 
+    // Cargo/Especialidade (para MEDICO ou ADMINISTRADOR)
+    String cargo,
+
     // Outros campos do usuário
     LocalDate dataNasc,
     String pais,

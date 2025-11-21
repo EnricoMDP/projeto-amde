@@ -32,6 +32,7 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
     nivelAcesso: "PACIENTE" as Nivel,
     descPaciente: "",
     grauSuporte: "", // 1, 2 ou 3 (string para facilitar o Select)
+    cargo: "", // Especialidade (MEDICO)
     dataNasc: "",
     pais: "",
     estado: "",
@@ -41,6 +42,7 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
   });
 
   const isPaciente = useMemo(() => form.nivelAcesso === "PACIENTE", [form.nivelAcesso]);
+  const isMedico = useMemo(() => form.nivelAcesso === "MEDICO", [form.nivelAcesso]);
 
   const setField = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -103,6 +105,7 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
       nivelAcesso: form.nivelAcesso,
       descPaciente: isPaciente && form.descPaciente ? form.descPaciente : undefined,
       grauSuporte: isPaciente && form.grauSuporte ? parseInt(form.grauSuporte) : undefined,
+      cargo: isMedico && form.cargo ? form.cargo : undefined,
       dataNasc: form.dataNasc || undefined,
       pais: form.pais || undefined,
       estado: form.estado || undefined,
@@ -126,6 +129,7 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
         nivelAcesso: "PACIENTE",
         descPaciente: "",
         grauSuporte: "",
+        cargo: "",
         dataNasc: "",
         pais: "",
         estado: "",
@@ -210,6 +214,17 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
                   <SelectItem value="3">Nível 3 - Requer apoio muito substancial</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {isMedico && (
+            <div className="space-y-2">
+              <Label>Especialidade Médica</Label>
+              <Input
+                value={form.cargo}
+                onChange={(e) => setField("cargo", e.target.value)}
+                placeholder="Ex: Cardiologista, Pediatra, Neurologista..."
+              />
             </div>
           )}
 

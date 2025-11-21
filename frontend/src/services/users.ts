@@ -12,6 +12,7 @@ export interface UsuarioDTO {
   rua?: string;
   numCelular?: string;
   grauSuporte?: number; // 1, 2 ou 3 - apenas para pacientes
+  cargo?: string; // Especialidade (MEDICO) ou Cargo (ADMINISTRADOR)
 }
 
 // ATUALIZADO: Reflete o novo ProntuarioDTO do Java

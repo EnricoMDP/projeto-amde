@@ -62,6 +62,17 @@ public class UsuarioService {
                 paciente.setGrauSuporte(dto.grauSuporte());
             }
             usuario.setPaciente(paciente);
+        } else if (dto.nivelAcesso() == NivelAcesso.MEDICO || dto.nivelAcesso() == NivelAcesso.ADMINISTRADOR) {
+            Funcionario funcionario = new Funcionario();
+            funcionario.setUsuario(usuario);
+            
+            if (dto.cargo() != null && !dto.cargo().isBlank()) {
+                funcionario.setCargo(dto.cargo());
+            } else if (dto.nivelAcesso() == NivelAcesso.MEDICO) {
+                funcionario.setCargo("Clínico Geral");
+            }
+            
+            usuario.setFuncionario(funcionario);
         }
 
         Usuario salvo = repository.save(usuario);

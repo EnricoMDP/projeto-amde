@@ -14,6 +14,7 @@ public interface UsuarioMapper {
     // Mapear Usuario -> UsuarioDTO (mapeia id -> idUsuario)
     @Mapping(source = "id", target = "idUsuario")
     @Mapping(source = "paciente.grauSuporte", target = "grauSuporte")
+    @Mapping(source = "funcionario.cargo", target = "cargo")
     UsuarioDTO toDTO(Usuario usuario);
 
     // Método auxiliar para mapear os dados do DTO para a Entidade Paciente
