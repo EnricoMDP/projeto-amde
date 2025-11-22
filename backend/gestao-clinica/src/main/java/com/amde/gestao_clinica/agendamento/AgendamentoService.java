@@ -152,6 +152,7 @@ public class AgendamentoService {
 
         dto.setNomeFuncionario(agendamento.getFuncionario().getUsuario().getNome());
         dto.setIdFuncionario(agendamento.getFuncionario().getId());
+        dto.setCargoFuncionario(agendamento.getFuncionario().getCargo());
 
         // Para simplificar, assume o primeiro paciente na lista
         if (!agendamento.getPacientesAgendados().isEmpty()) {

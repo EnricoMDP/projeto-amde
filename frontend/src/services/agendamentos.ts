@@ -12,6 +12,7 @@ export interface AgendamentoDTO {
   
   nomeFuncionario: string;
   idFuncionario: number;
+  cargoFuncionario?: string; // Especialidade do médico
   nomePaciente: string;
   idPaciente: number;
 }

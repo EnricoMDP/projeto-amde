@@ -22,6 +22,7 @@ public class AgendamentoDTO {
     // Dados do funcionário e paciente simplificados para exibição
     private String nomeFuncionario;
     private Long idFuncionario;
+    private String cargoFuncionario; // Especialidade do médico
     private String nomePaciente;
     private Long idPaciente;
 }

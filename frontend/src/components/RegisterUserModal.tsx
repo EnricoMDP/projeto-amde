@@ -137,8 +137,8 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
         rua: "",
         numCelular: "",
       });
-    } catch (err: any) {
-      toast.error("Falha ao criar usuário", { description: err?.message });
+    } catch (err: unknown) {
+      toast.error("Falha ao criar usuário", { description: err instanceof Error ? err.message : "Erro desconhecido" });
     } finally {
       setSubmitting(false);
     }

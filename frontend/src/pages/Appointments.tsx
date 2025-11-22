@@ -5,10 +5,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge"; // Assumindo que você tem Badge
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
-import { getAgendamentos, deleteAgendamento, AgendamentoDTO } from "@/services/agendamentos"; // Novo serviço
+import { getAgendamentos, deleteAgendamento, AgendamentoDTO } from "@/services/agendamentos";
+import AppointmentModal from "@/components/AppointmentModal";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState<AgendamentoDTO[]>([]);
@@ -18,6 +19,10 @@ const Appointments = () => {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<"dataInicio" | "nomePaciente" | "status">("dataInicio");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  
+  // Modal states
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<AgendamentoDTO | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -93,7 +98,7 @@ const Appointments = () => {
             <p className="text-gray-600">Gerencie todas as consultas e compromissos</p>
           </div>
         </div>
-        <Button className="bg-primary-500 hover:bg-primary-600 text-white" onClick={() => {/* Abrir Modal de Criação */}}>
+        <Button className="bg-primary-500 hover:bg-primary-600 text-white" onClick={() => { setSelectedAppointment(null); setModalOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />
           Nova Consulta
         </Button>
@@ -133,15 +138,16 @@ const Appointments = () => {
                   <TableHead><button onClick={() => setSortKey("dataInicio")}>Data/Hora</button></TableHead>
                   <TableHead><button onClick={() => setSortKey("nomePaciente")}>Paciente</button></TableHead>
                   <TableHead>Médico</TableHead>
+                  <TableHead>Especialidade</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead><button onClick={() => setSortKey("status")}>Status</button></TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={6} className="text-center py-6">Carregando...</TableCell></TableRow>}
-                {!loading && error && <TableRow><TableCell colSpan={6} className="text-center py-6 text-red-600">{error}</TableCell></TableRow>}
-                {!loading && !error && visibleAppointments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-gray-500">Nenhum agendamento encontrado</TableCell></TableRow>}
+                {loading && <TableRow><TableCell colSpan={7} className="text-center py-6">Carregando...</TableCell></TableRow>}
+                {!loading && error && <TableRow><TableCell colSpan={7} className="text-center py-6 text-red-600">{error}</TableCell></TableRow>}
+                {!loading && !error && visibleAppointments.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-6 text-gray-500">Nenhum agendamento encontrado</TableCell></TableRow>}
                 
                 {!loading && !error && visibleAppointments.map((a) => (
                   <TableRow key={a.id}>
@@ -156,6 +162,7 @@ const Appointments = () => {
                     </TableCell>
                     <TableCell className="font-medium text-gray-900">{a.nomePaciente}</TableCell>
                     <TableCell className="text-gray-600">{a.nomeFuncionario}</TableCell>
+                    <TableCell className="text-gray-600">{a.cargoFuncionario || "-"}</TableCell>
                     <TableCell>{a.tipoAgendamento}</TableCell>
                     <TableCell>
                        <Badge className={getStatusColor(a.status)}>
@@ -164,7 +171,9 @@ const Appointments = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" title="Editar"><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Editar" onClick={() => { setSelectedAppointment(a); setModalOpen(true); }}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" title="Excluir"><Trash2 className="w-4 h-4 text-red-600" /></Button>
@@ -191,7 +200,14 @@ const Appointments = () => {
           </div>
         </CardContent>
       </Card>
-      {/* Modal de CRUD (a ser implementado no próximo passo) */}
+      
+      {/* Modal de CRUD */}
+      <AppointmentModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        appointment={selectedAppointment}
+        onSuccess={fetchData}
+      />
     </div>
   );
 };
