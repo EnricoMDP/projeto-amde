@@ -62,8 +62,8 @@ jobs:
       # 4. Injetar URL da API (Substituindo o placeholder)
       - name: Inject API URL into Build Output
         run: |
-          # O 'sed' substitui o placeholder $$API_IP_ADDRESS$$ pelo IP final
-          find ./frontend/dist -type f -name "*.js" -exec sed -i "s|$$API_IP_ADDRESS$$|http://${{ env.IP_FINAL }}:8080|g" {} \;
+          # O 'sed' substitui a string placeholder injetada pelo Vite pela URL final do Backend
+          find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|http://${{ env.IP_FINAL }}:8080|g" {} \;
 
       # 5. Configurar Credenciais AWS (Instala o AWS CLI)
       - name: Configure AWS Credentials
