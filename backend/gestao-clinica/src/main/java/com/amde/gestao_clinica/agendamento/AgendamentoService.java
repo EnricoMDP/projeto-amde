@@ -41,7 +41,7 @@ public class AgendamentoService {
         // 2. Buscar Entidades
         var funcionario = funcionarioRepository.findByUsuarioId(dto.idFuncionario())
                 .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado."));
-        var paciente = pacienteRepository.findById(dto.idPaciente())
+        var paciente = pacienteRepository.findByUsuarioId(dto.idPaciente())
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
 
         // 3. Checar Conflito de Horário (para o funcionário)
@@ -101,13 +101,13 @@ public class AgendamentoService {
         // 3. Atualizar Vínculo com Paciente (Simplificado para o primeiro paciente)
         if (!agendamento.getPacientesAgendados().isEmpty()) {
             AgendaPaciente agendaPaciente = agendamento.getPacientesAgendados().get(0);
-            Paciente novoPaciente = pacienteRepository.findById(dto.idPaciente())
+            Paciente novoPaciente = pacienteRepository.findByUsuarioId(dto.idPaciente())
                     .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
             agendaPaciente.setPaciente(novoPaciente);
             agendaPacienteRepository.save(agendaPaciente);
         } else {
             // Se não tinha paciente, cria
-             Paciente novoPaciente = pacienteRepository.findById(dto.idPaciente())
+             Paciente novoPaciente = pacienteRepository.findByUsuarioId(dto.idPaciente())
                     .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
              AgendaPaciente novaAgendaPaciente = new AgendaPaciente();
              novaAgendaPaciente.setAgendamento(agendamento);
