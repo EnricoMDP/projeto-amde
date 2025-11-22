@@ -39,7 +39,7 @@ public class AgendamentoService {
         }
 
         // 2. Buscar Entidades
-        var funcionario = funcionarioRepository.findById(dto.idFuncionario())
+        var funcionario = funcionarioRepository.findByUsuarioId(dto.idFuncionario())
                 .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado."));
         var paciente = pacienteRepository.findById(dto.idPaciente())
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
@@ -89,7 +89,7 @@ public class AgendamentoService {
         }
 
         // 2. Atualizar Agendamento Principal
-        var funcionario = funcionarioRepository.findById(dto.idFuncionario())
+        var funcionario = funcionarioRepository.findByUsuarioId(dto.idFuncionario())
                 .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado."));
 
         agendamento.setFuncionario(funcionario);
