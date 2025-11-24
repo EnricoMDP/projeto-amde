@@ -1,5 +1,6 @@
 package com.amde.gestao_clinica.agendamento;
 
+import com.amde.gestao_clinica.logger.AuditoriaService;
 import com.amde.gestao_clinica.usuario.BusinessException;
 import com.amde.gestao_clinica.usuario.FuncionarioRepository;
 import com.amde.gestao_clinica.usuario.PacienteRepository;
@@ -9,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AgendamentoService {
@@ -17,16 +17,19 @@ public class AgendamentoService {
     private final AgendamentoRepository agendamentoRepository;
     private final FuncionarioRepository funcionarioRepository;
     private final PacienteRepository pacienteRepository;
-    private final AgendaPacienteRepository agendaPacienteRepository; // Injetado para gerenciar links
+    private final AgendaPacienteRepository agendaPacienteRepository;
+    private final AuditoriaService auditoriaService;
 
     public AgendamentoService(AgendamentoRepository agendamentoRepository,
                               FuncionarioRepository funcionarioRepository,
                               PacienteRepository pacienteRepository,
-                              AgendaPacienteRepository agendaPacienteRepository) {
+                              AgendaPacienteRepository agendaPacienteRepository,
+                              AuditoriaService auditoriaService) {
         this.agendamentoRepository = agendamentoRepository;
         this.funcionarioRepository = funcionarioRepository;
         this.pacienteRepository = pacienteRepository;
         this.agendaPacienteRepository = agendaPacienteRepository;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional
@@ -75,6 +78,20 @@ public class AgendamentoService {
         
         agendamento.getPacientesAgendados().add(agendaPaciente);
 
+        // 6. Registrar log de auditoria
+        String detalhes = String.format(
+            "ID Agendamento: %d, Paciente: %s (ID: %d), Funcionário: %s (ID: %d), Tipo: %s, Data: %s a %s",
+            agendamento.getId(),
+            paciente.getUsuario().getNome(),
+            paciente.getId(),
+            funcionario.getUsuario().getNome(),
+            funcionario.getId(),
+            dto.tipoAgendamento(),
+            dto.dataInicio(),
+            dto.dataFinal()
+        );
+        auditoriaService.registrarLog("CRIACAO_AGENDAMENTO", detalhes);
+
         return toDTO(agendamento);
     }
     
@@ -88,23 +105,63 @@ public class AgendamentoService {
             throw new BusinessException("A data de início deve ser anterior à data final.");
         }
 
+        // StringBuilder para registrar alterações
+        StringBuilder alteracoes = new StringBuilder();
+        alteracoes.append("ID: ").append(id).append(" | Campos alterados: ");
+        boolean houveAlteracao = false;
+
         // 2. Atualizar Agendamento Principal
         var funcionario = funcionarioRepository.findByUsuarioId(dto.idFuncionario())
                 .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado."));
 
-        agendamento.setFuncionario(funcionario);
-        agendamento.setDataInicio(dto.dataInicio());
-        agendamento.setDataFinal(dto.dataFinal());
-        agendamento.setStatus(dto.status());
-        agendamento.setTipoAgendamento(dto.tipoAgendamento());
+        if (!agendamento.getFuncionario().getId().equals(funcionario.getId())) {
+            alteracoes.append("[Funcionário: ID ").append(agendamento.getFuncionario().getId())
+                     .append(" → ID ").append(funcionario.getId()).append("] ");
+            agendamento.setFuncionario(funcionario);
+            houveAlteracao = true;
+        }
+
+        if (!agendamento.getDataInicio().equals(dto.dataInicio())) {
+            alteracoes.append("[Data Início: '").append(agendamento.getDataInicio())
+                     .append("' → '").append(dto.dataInicio()).append("'] ");
+            agendamento.setDataInicio(dto.dataInicio());
+            houveAlteracao = true;
+        }
+
+        if (!agendamento.getDataFinal().equals(dto.dataFinal())) {
+            alteracoes.append("[Data Final: '").append(agendamento.getDataFinal())
+                     .append("' → '").append(dto.dataFinal()).append("'] ");
+            agendamento.setDataFinal(dto.dataFinal());
+            houveAlteracao = true;
+        }
+
+        if (!agendamento.getStatus().equals(dto.status())) {
+            alteracoes.append("[Status: '").append(agendamento.getStatus())
+                     .append("' → '").append(dto.status()).append("'] ");
+            agendamento.setStatus(dto.status());
+            houveAlteracao = true;
+        }
+
+        if (!agendamento.getTipoAgendamento().equals(dto.tipoAgendamento())) {
+            alteracoes.append("[Tipo: '").append(agendamento.getTipoAgendamento())
+                     .append("' → '").append(dto.tipoAgendamento()).append("'] ");
+            agendamento.setTipoAgendamento(dto.tipoAgendamento());
+            houveAlteracao = true;
+        }
 
         // 3. Atualizar Vínculo com Paciente (Simplificado para o primeiro paciente)
         if (!agendamento.getPacientesAgendados().isEmpty()) {
             AgendaPaciente agendaPaciente = agendamento.getPacientesAgendados().get(0);
             Paciente novoPaciente = pacienteRepository.findByUsuarioId(dto.idPaciente())
                     .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
-            agendaPaciente.setPaciente(novoPaciente);
-            agendaPacienteRepository.save(agendaPaciente);
+            
+            if (!agendaPaciente.getPaciente().getId().equals(novoPaciente.getId())) {
+                alteracoes.append("[Paciente: ID ").append(agendaPaciente.getPaciente().getId())
+                         .append(" → ID ").append(novoPaciente.getId()).append("] ");
+                agendaPaciente.setPaciente(novoPaciente);
+                agendaPacienteRepository.save(agendaPaciente);
+                houveAlteracao = true;
+            }
         } else {
             // Se não tinha paciente, cria
              Paciente novoPaciente = pacienteRepository.findByUsuarioId(dto.idPaciente())
@@ -114,15 +171,34 @@ public class AgendamentoService {
              novaAgendaPaciente.setPaciente(novoPaciente);
              agendaPacienteRepository.save(novaAgendaPaciente);
              agendamento.getPacientesAgendados().add(novaAgendaPaciente);
+             alteracoes.append("[Paciente adicionado: ID ").append(novoPaciente.getId()).append("] ");
+             houveAlteracao = true;
         }
 
-        return toDTO(agendamentoRepository.save(agendamento));
+        Agendamento atualizado = agendamentoRepository.save(agendamento);
+
+        // Registrar log de auditoria com detalhes das alterações
+        if (houveAlteracao) {
+            auditoriaService.registrarLog("ATUALIZACAO_AGENDAMENTO", alteracoes.toString());
+        }
+
+        return toDTO(atualizado);
     }
 
     @Transactional
     public void deletarAgendamento(Long id) {
         Agendamento agendamento = agendamentoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado."));
+        
+        // Registrar log antes de deletar
+        String detalhes = String.format(
+            "ID Agendamento: %d, Tipo: %s, Data: %s a %s",
+            agendamento.getId(),
+            agendamento.getTipoAgendamento(),
+            agendamento.getDataInicio(),
+            agendamento.getDataFinal()
+        );
+        auditoriaService.registrarLog("EXCLUSAO_AGENDAMENTO", detalhes);
         
         // O relacionamento está configurado com orphanRemoval=true, o que deve remover AgendaPaciente em cascata.
         agendamentoRepository.delete(agendamento);
@@ -131,6 +207,11 @@ public class AgendamentoService {
     public AgendamentoDTO obterAgendamento(Long id) {
         Agendamento agendamento = agendamentoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado."));
+        
+        // Registrar log de consulta
+        String detalhes = String.format("ID Agendamento: %d", id);
+        auditoriaService.registrarLog("CONSULTA_AGENDAMENTO", detalhes);
+        
         return toDTO(agendamento);
     }
 

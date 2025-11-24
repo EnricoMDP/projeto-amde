@@ -1,5 +1,6 @@
 package com.amde.gestao_clinica.prontuario;
 
+import com.amde.gestao_clinica.logger.AuditoriaService;
 import com.amde.gestao_clinica.usuario.BusinessException;
 import com.amde.gestao_clinica.usuario.Paciente;
 import com.amde.gestao_clinica.usuario.PacienteRepository;
@@ -27,6 +28,7 @@ public class ProntuarioService {
     private final CategoriaProntuarioRepository categoriaRepository;
     private final PacienteRepository pacienteRepository;
     private final RegistroProntuarioMapper registroMapper;
+    private final AuditoriaService auditoriaService;
 
     @Value("${storage.prontuarios.dir:uploads/prontuarios}")
     private String storageDir;
@@ -34,11 +36,13 @@ public class ProntuarioService {
     public ProntuarioService(RegistroProntuarioRepository registroRepository,
                              CategoriaProntuarioRepository categoriaRepository,
                              PacienteRepository pacienteRepository,
-                             RegistroProntuarioMapper registroMapper) {
+                             RegistroProntuarioMapper registroMapper,
+                             AuditoriaService auditoriaService) {
         this.registroRepository = registroRepository;
         this.categoriaRepository = categoriaRepository;
         this.pacienteRepository = pacienteRepository;
         this.registroMapper = registroMapper;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional
@@ -91,6 +95,14 @@ public class ProntuarioService {
 
         // 4. Salvar no banco
         registro = registroRepository.save(registro);
+        
+        // 5. Registrar log de auditoria
+        String detalhes = String.format("Paciente ID: %d, Categoria: %s, Arquivo: %s, Registro ID: %d", 
+                                        paciente.getId(), 
+                                        categoria.getNome(),
+                                        registro.getNomeArquivoOriginal(),
+                                        registro.getIdRegistro());
+        auditoriaService.registrarLog("UPLOAD_PRONTUARIO", detalhes);
 
         return registroMapper.toDTO(registro);
     }
@@ -112,6 +124,16 @@ public class ProntuarioService {
                 // Tenta achar com o nome que está no banco se o UUID falhar
                  throw new BusinessException("Arquivo indisponível no servidor.");
             }
+            
+            // Registrar log de auditoria do download
+            String detalhes = String.format("Paciente: %s (ID: %d) | Categoria: %s | Arquivo: %s | Registro ID: %d", 
+                                            reg.getPaciente().getUsuario().getNome(),
+                                            reg.getPaciente().getId(),
+                                            reg.getCategoria().getNome(),
+                                            reg.getNomeArquivoOriginal(),
+                                            reg.getIdRegistro());
+            auditoriaService.registrarLog("DOWNLOAD_PRONTUARIO", detalhes);
+            
             return resource;
         } catch (MalformedURLException e) {
             throw new BusinessException("Caminho de arquivo inválido.");
@@ -129,6 +151,14 @@ public class ProntuarioService {
         RegistroProntuario reg = registroRepository.findById(idRegistro)
             .orElseThrow(() -> new BusinessException("Prontuário não encontrado."));
 
+        // Capturar dados antes de deletar para o log
+        String detalhes = String.format("Paciente: %s (ID: %d) | Categoria: %s | Arquivo: %s | Registro ID: %d", 
+                                        reg.getPaciente().getUsuario().getNome(),
+                                        reg.getPaciente().getId(),
+                                        reg.getCategoria().getNome(),
+                                        reg.getNomeArquivoOriginal(),
+                                        reg.getIdRegistro());
+
         // Remove arquivo físico
         Path base = Paths.get(storageDir).toAbsolutePath().normalize();
         Path caminho = base
@@ -143,5 +173,8 @@ public class ProntuarioService {
         }
 
         registroRepository.delete(reg);
+        
+        // Registrar log de auditoria
+        auditoriaService.registrarLog("EXCLUSAO_PRONTUARIO", detalhes);
     }
 }

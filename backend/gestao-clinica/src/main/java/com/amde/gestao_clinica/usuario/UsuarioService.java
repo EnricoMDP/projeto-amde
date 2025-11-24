@@ -1,5 +1,6 @@
 package com.amde.gestao_clinica.usuario;
 
+import com.amde.gestao_clinica.logger.AuditoriaService;
 import com.amde.gestao_clinica.prontuario.RegistroProntuario;
 import com.amde.gestao_clinica.prontuario.RegistroProntuarioMapper;
 import com.amde.gestao_clinica.prontuario.RegistroProntuarioRepository;
@@ -19,19 +20,22 @@ public class UsuarioService {
     private final UsuarioMapper usuarioMapper;
     private final RegistroProntuarioRepository registroRepository; // Renomeado
     private final RegistroProntuarioMapper registroProntuarioMapper; // Novo mapper injetado
+    private final AuditoriaService auditoriaService;
 
     public UsuarioService(UsuarioRepository repository,
                           PasswordEncoder passwordEncoder,
                           JwtUtil jwtUtil,
                           UsuarioMapper usuarioMapper,
                           RegistroProntuarioRepository registroRepository,
-                          RegistroProntuarioMapper registroProntuarioMapper) {
+                          RegistroProntuarioMapper registroProntuarioMapper,
+                          AuditoriaService auditoriaService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.usuarioMapper = usuarioMapper;
         this.registroRepository = registroRepository;
         this.registroProntuarioMapper = registroProntuarioMapper;
+        this.auditoriaService = auditoriaService;
     }
 
     public List<UsuarioDTO> listarTodos() { 
@@ -76,6 +80,14 @@ public class UsuarioService {
         }
 
         Usuario salvo = repository.save(usuario);
+        
+        // Registrar log de auditoria
+        String detalhes = String.format("Email: %s, Nível: %s, ID: %d", 
+                                        salvo.getEmail(), 
+                                        salvo.getNivelAcesso(), 
+                                        salvo.getId());
+        auditoriaService.registrarLog("CADASTRO_USUARIO", detalhes);
+        
         return usuarioMapper.toDTO(salvo);
     }
 
@@ -87,12 +99,26 @@ public class UsuarioService {
             throw new BusinessException("Usuário ou senha inválidos");
         }
 
-        return jwtUtil.generateToken(
+        String token = jwtUtil.generateToken(
             usuario.getId(),
             usuario.getEmail(),
             usuario.getNivelAcesso().name(),
             usuario.getNome()
         );
+        
+        // Registrar log de auditoria - LOGIN BEM-SUCEDIDO
+        String detalhes = String.format("Email: %s, Nível: %s", 
+                                        usuario.getEmail(), 
+                                        usuario.getNivelAcesso());
+        auditoriaService.registrarLog("LOGIN", detalhes);
+        
+        return token;
+    }
+
+    public void logout() {
+        // Registrar log de auditoria - LOGOUT
+        // O usuário é capturado automaticamente do SecurityContext pelo AuditoriaService
+        auditoriaService.registrarLog("LOGOUT", "Usuário desconectado do sistema");
     }
 
     @Transactional(readOnly = true)
@@ -132,17 +158,57 @@ public class UsuarioService {
             throw new BusinessException("Email já cadastrado");
         }
 
-        if (dto.nome() != null) usuario.setNome(dto.nome());
-        if (dto.email() != null) usuario.setEmail(dto.email());
-        if (dto.numCelular() != null) usuario.setNumCelular(dto.numCelular());
-        if (dto.pais() != null) usuario.setPais(dto.pais());
-        if (dto.estado() != null) usuario.setEstado(dto.estado());
-        if (dto.cidade() != null) usuario.setCidade(dto.cidade());
-        if (dto.rua() != null) usuario.setRua(dto.rua());
-        if (dto.dataNasc() != null) usuario.setDataNasc(dto.dataNasc());
+        // StringBuilder para registrar alterações
+        StringBuilder alteracoes = new StringBuilder();
+        alteracoes.append("ID: ").append(id).append(" | Campos alterados: ");
+        boolean houveAlteracao = false;
+
+        if (dto.nome() != null && !dto.nome().equals(usuario.getNome())) {
+            alteracoes.append("[Nome: '").append(usuario.getNome()).append("' → '").append(dto.nome()).append("'] ");
+            usuario.setNome(dto.nome());
+            houveAlteracao = true;
+        }
+        if (dto.email() != null && !dto.email().equals(usuario.getEmail())) {
+            alteracoes.append("[Email: '").append(usuario.getEmail()).append("' → '").append(dto.email()).append("'] ");
+            usuario.setEmail(dto.email());
+            houveAlteracao = true;
+        }
+        if (dto.numCelular() != null && !dto.numCelular().equals(usuario.getNumCelular())) {
+            alteracoes.append("[Celular: '").append(usuario.getNumCelular()).append("' → '").append(dto.numCelular()).append("'] ");
+            usuario.setNumCelular(dto.numCelular());
+            houveAlteracao = true;
+        }
+        if (dto.pais() != null && !dto.pais().equals(usuario.getPais())) {
+            alteracoes.append("[País: '").append(usuario.getPais()).append("' → '").append(dto.pais()).append("'] ");
+            usuario.setPais(dto.pais());
+            houveAlteracao = true;
+        }
+        if (dto.estado() != null && !dto.estado().equals(usuario.getEstado())) {
+            alteracoes.append("[Estado: '").append(usuario.getEstado()).append("' → '").append(dto.estado()).append("'] ");
+            usuario.setEstado(dto.estado());
+            houveAlteracao = true;
+        }
+        if (dto.cidade() != null && !dto.cidade().equals(usuario.getCidade())) {
+            alteracoes.append("[Cidade: '").append(usuario.getCidade()).append("' → '").append(dto.cidade()).append("'] ");
+            usuario.setCidade(dto.cidade());
+            houveAlteracao = true;
+        }
+        if (dto.rua() != null && !dto.rua().equals(usuario.getRua())) {
+            alteracoes.append("[Rua: '").append(usuario.getRua()).append("' → '").append(dto.rua()).append("'] ");
+            usuario.setRua(dto.rua());
+            houveAlteracao = true;
+        }
+        if (dto.dataNasc() != null && !dto.dataNasc().equals(usuario.getDataNasc())) {
+            alteracoes.append("[Data Nasc: '").append(usuario.getDataNasc()).append("' → '").append(dto.dataNasc()).append("'] ");
+            usuario.setDataNasc(dto.dataNasc());
+            houveAlteracao = true;
+        }
 
         if (dto.nivelAcesso() != null && dto.nivelAcesso() != usuario.getNivelAcesso()) {
+            alteracoes.append("[Nível Acesso: '").append(usuario.getNivelAcesso()).append("' → '").append(dto.nivelAcesso()).append("'] ");
             usuario.setNivelAcesso(dto.nivelAcesso());
+            houveAlteracao = true;
+            
             if (dto.nivelAcesso() == NivelAcesso.PACIENTE && usuario.getPaciente() == null) {
                 Paciente paciente = new Paciente();
                 paciente.setUsuario(usuario);
@@ -155,15 +221,25 @@ public class UsuarioService {
         }
 
         if (usuario.getNivelAcesso() == NivelAcesso.PACIENTE && usuario.getPaciente() != null) {
-            if (dto.descPaciente() != null) {
+            if (dto.descPaciente() != null && !dto.descPaciente().equals(usuario.getPaciente().getDescricao())) {
+                alteracoes.append("[Descrição Paciente: '").append(usuario.getPaciente().getDescricao()).append("' → '").append(dto.descPaciente()).append("'] ");
                 usuario.getPaciente().setDescricao(dto.descPaciente());
+                houveAlteracao = true;
             }
-            if (dto.grauSuporte() != null) {
+            if (dto.grauSuporte() != null && !dto.grauSuporte().equals(usuario.getPaciente().getGrauSuporte())) {
+                alteracoes.append("[Grau Suporte: '").append(usuario.getPaciente().getGrauSuporte()).append("' → '").append(dto.grauSuporte()).append("'] ");
                 usuario.getPaciente().setGrauSuporte(dto.grauSuporte());
+                houveAlteracao = true;
             }
         }
 
         Usuario salvo = repository.save(usuario);
+        
+        // Registrar log de auditoria com detalhes das alterações
+        if (houveAlteracao) {
+            auditoriaService.registrarLog("ATUALIZACAO_USUARIO", alteracoes.toString());
+        }
+        
         return usuarioMapper.toDTO(salvo);
     }
 
@@ -171,6 +247,11 @@ public class UsuarioService {
     public void deletarUsuario(Long id) {
         Usuario usuario = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        
+        // Registrar log de auditoria ANTES de deletar
+        String detalhes = String.format("Email: %s, ID: %d", usuario.getEmail(), usuario.getId());
+        auditoriaService.registrarLog("EXCLUSAO_USUARIO", detalhes);
+        
         repository.delete(usuario);
     }
 }

@@ -40,6 +40,12 @@ public class UsuarioController {
         return ResponseEntity.ok(jwt);
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        service.logout();
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}/perfil")
     public ResponseEntity<PerfilPacienteDTO> obterPerfil(@PathVariable("id") Long id) {
         PerfilPacienteDTO perfil = service.buscarPerfilPacientePorId(id);

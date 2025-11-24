@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-1-create-log-auditoria
+      author: enrico
+      changes:
+        - createTable:
+            tableName: log_auditoria
+            columns:
+              - column:
+                  name: id_log
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: usuario
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                  remarks: "Email ou login do usuário que realizou a ação"
+              - column:
+                  name: acao
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+                  remarks: "Tipo de ação realizada (LOGIN, CADASTRO_USUARIO, UPLOAD_PRONTUARIO, etc.)"
+              - column:
+                  name: detalhes
+                  type: text
+                  remarks: "Informações detalhadas sobre a ação (payload, IDs de recursos afetados, etc.)"
+              - column:
+                  name: data_hora
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  remarks: "Data e hora em que a ação foi realizada"
+        - createIndex:
+            indexName: idx_log_auditoria_usuario
+            tableName: log_auditoria
+            columns:
+              - column:
+                  name: usuario
+        - createIndex:
+            indexName: idx_log_auditoria_acao
+            tableName: log_auditoria
+            columns:
+              - column:
+                  name: acao
+        - createIndex:
+            indexName: idx_log_auditoria_data_hora
+            tableName: log_auditoria
+            columns:
+              - column:
+                  name: data_hora
+                  descending: true
