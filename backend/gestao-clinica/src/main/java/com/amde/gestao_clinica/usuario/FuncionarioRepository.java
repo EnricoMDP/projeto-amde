@@ -7,4 +7,9 @@ public interface FuncionarioRepository extends JpaRepository<Funcionario, Long> 
     
     // Para facilitar a busca de agendamentos: Encontra o funcionário pelo ID do Usuário (login)
     Optional<Funcionario> findByUsuarioId(Long idUsuario);
+    
+    // Verificar se CRM já existe
+    Optional<Funcionario> findByCrm(String crm);
+    
+    boolean existsByCrm(String crm);
 }

@@ -13,4 +13,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     // Buscar por nível de acesso
     List<Usuario> findByNivelAcesso(NivelAcesso nivelAcesso);
+    
+    // Verificar se CPF já existe
+    Optional<Usuario> findByCpf(String cpf);
+    
+    boolean existsByCpf(String cpf);
 }

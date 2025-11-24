@@ -13,6 +13,8 @@ export interface UsuarioDTO {
   numCelular?: string;
   grauSuporte?: number; // 1, 2 ou 3 - apenas para pacientes
   cargo?: string; // Especialidade (MEDICO) ou Cargo (ADMINISTRADOR)
+  cpf?: string;
+  crm?: string;
 }
 
 // ATUALIZADO: Reflete o novo ProntuarioDTO do Java
@@ -63,6 +65,8 @@ export interface UsuarioUpdatePayload {
   nivelAcesso?: "PACIENTE" | "MEDICO" | "ADMINISTRADOR";
   descPaciente?: string;
   grauSuporte?: number; // 1, 2 ou 3 - usado quando PACIENTE
+  cpf?: string;
+  crm?: string;
 }
 
 export async function updateUsuario(id: number, payload: UsuarioUpdatePayload): Promise<UsuarioDTO> {

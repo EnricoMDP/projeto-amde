@@ -10,6 +10,7 @@ export interface RegisterPayload {
   senha: string;
   nome: string;
   nivelAcesso: "PACIENTE" | "MEDICO" | "ADMINISTRADOR";
+  cpf?: string; // CPF para PACIENTE
   dataNasc?: string;
   pais?: string;
   estado?: string;
@@ -18,6 +19,7 @@ export interface RegisterPayload {
   numCelular?: string;
   descPaciente?: string; // usado quando PACIENTE
   grauSuporte?: number; // 1, 2 ou 3 - usado quando PACIENTE
+  crm?: string; // CRM para MEDICO
   cargo?: string; // Especialidade (MEDICO)
 }
 

@@ -27,6 +27,9 @@ public class Usuario {
     @Column(nullable = false, length = 255)
     private String nome;
 
+    @Column(unique = true, length = 14)
+    private String cpf; // CPF no formato: 000.000.000-00 ou 00000000000
+
     @Enumerated(EnumType.STRING)
     @Column(name = "nivel_acesso", nullable = false, length = 50)
     private NivelAcesso nivelAcesso;

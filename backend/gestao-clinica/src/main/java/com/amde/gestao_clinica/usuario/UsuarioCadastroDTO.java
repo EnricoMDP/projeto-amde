@@ -1,4 +1,8 @@
 package com.amde.gestao_clinica.usuario;
+
+import com.amde.gestao_clinica.util.validation.Cpf;
+import com.amde.gestao_clinica.util.validation.Crm;
+import com.amde.gestao_clinica.util.validation.DataNascimento;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +22,9 @@ public record UsuarioCadastroDTO(
     @NotBlank(message = "A senha é obrigatória")
     String senha,
     
+    @Cpf
+    String cpf, // CPF do usuário - validação customizada
+    
     @NotNull(message = "O nível de acesso é obrigatório")
     NivelAcesso nivelAcesso, // Ex: "PACIENTE", "MEDICO"
 
@@ -27,10 +34,15 @@ public record UsuarioCadastroDTO(
     // Grau de suporte do autismo (1, 2 ou 3) - apenas para pacientes
     Integer grauSuporte,
 
+    // CRM para médicos/funcionários da saúde - validação customizada
+    @Crm
+    String crm,
+
     // Cargo/Especialidade (para MEDICO ou ADMINISTRADOR)
     String cargo,
 
     // Outros campos do usuário
+    @DataNascimento
     LocalDate dataNasc,
     String pais,
     String estado,

@@ -21,4 +21,6 @@ public class UsuarioDTO {
     private String numCelular;
     private Integer grauSuporte; // Grau de suporte do autismo (1, 2 ou 3) - apenas para pacientes
     private String cargo; // Especialidade (MEDICO) ou Cargo (ADMINISTRADOR)
+    private String cpf; // CPF do usuário (para PACIENTE)
+    private String crm; // CRM do funcionário (para MEDICO)
 }

@@ -25,6 +25,17 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Você pode adicionar interceptors de resposta aqui também, se precisar (ex: para tratar 401 globalmente)
+// Interceptor de resposta para tratar erros de forma padronizada
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Se a resposta tiver dados de erro customizados do backend
+    if (error.response?.data?.message) {
+      // Substitui a mensagem de erro padrão pela mensagem do backend
+      error.message = error.response.data.message;
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default apiClient;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { register as registerApi, type RegisterPayload } from "@/services/auth";
+import { UFS_BRASILEIRAS, getDataNascimentoMinima, getDataNascimentoMaxima } from "@/lib/constants";
 
 type Nivel = "PACIENTE" | "MEDICO" | "ADMINISTRADOR";
 
@@ -30,8 +31,10 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
     senha: "",
     confirmarSenha: "",
     nivelAcesso: "PACIENTE" as Nivel,
+    cpf: "", // CPF para PACIENTE
     descPaciente: "",
     grauSuporte: "", // 1, 2 ou 3 (string para facilitar o Select)
+    crm: "", // CRM para MEDICO
     cargo: "", // Especialidade (MEDICO)
     dataNasc: "",
     pais: "",
@@ -45,6 +48,43 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
   const isMedico = useMemo(() => form.nivelAcesso === "MEDICO", [form.nivelAcesso]);
 
   const setField = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Atualiza automaticamente o CRM quando a UF mudar
+  useEffect(() => {
+    if (form.estado && form.crm) {
+      const numeros = form.crm.replace(/\D/g, "");
+      const novoCrm = maskCRM(numeros, form.estado);
+      if (novoCrm !== form.crm) {
+        setField("crm", novoCrm);
+      }
+    }
+  }, [form.estado]);
+
+  // Máscara de CPF: 999.999.999-99
+  const maskCPF = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    return digits
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+      .slice(0, 14); // Limita a 14 caracteres (999.999.999-99)
+  };
+
+  // Máscara de CRM: apenas números (a UF será concatenada automaticamente)
+  const maskCRM = (value: string, uf: string) => {
+    // Remove tudo que não é número
+    const numeros = value.replace(/\D/g, "");
+    
+    // Limita a 8 dígitos
+    const numerosLimitados = numeros.slice(0, 8);
+    
+    // Se tem UF selecionada, concatena automaticamente
+    if (numerosLimitados && uf) {
+      return `${numerosLimitados}/${uf}`;
+    }
+    
+    return numerosLimitados;
+  };
 
   // Máscara de telefone (BR): (99) 99999-9999 ou (99) 9999-9999
   const maskPhoneBR = (value: string) => {
@@ -71,9 +111,6 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
       });
   };
 
-  // Máscara/normalização de UF (2 letras)
-  const normalizeUF = (v: string) => v.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 2);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Validações obrigatórias
@@ -93,7 +130,6 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
     if (!form.numCelular) return toast.error("Telefone é obrigatório");
     if (!form.pais) return toast.error("País é obrigatório");
     if (!form.estado) return toast.error("Estado (UF) é obrigatório");
-    if (form.estado.length !== 2) return toast.error("Estado (UF) deve ter 2 letras");
     if (!form.cidade) return toast.error("Cidade é obrigatória");
     if (!form.dataNasc) return toast.error("Data de nascimento é obrigatória");
     if (!form.rua) return toast.error("Rua é obrigatória");
@@ -103,8 +139,10 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
       email: form.email,
       senha: form.senha,
       nivelAcesso: form.nivelAcesso,
+      cpf: (isPaciente && form.cpf) ? form.cpf : undefined,
       descPaciente: isPaciente && form.descPaciente ? form.descPaciente : undefined,
       grauSuporte: isPaciente && form.grauSuporte ? parseInt(form.grauSuporte) : undefined,
+      crm: (isMedico && form.crm) ? form.crm : undefined,
       cargo: isMedico && form.cargo ? form.cargo : undefined,
       dataNasc: form.dataNasc || undefined,
       pais: form.pais || undefined,
@@ -127,8 +165,10 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
         senha: "",
         confirmarSenha: "",
         nivelAcesso: "PACIENTE",
+        cpf: "",
         descPaciente: "",
         grauSuporte: "",
+        crm: "",
         cargo: "",
         dataNasc: "",
         pais: "",
@@ -217,6 +257,36 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
             </div>
           )}
 
+          {isPaciente && (
+            <div className="space-y-2">
+              <Label>CPF</Label>
+              <Input 
+                value={form.cpf} 
+                onChange={(e) => setField("cpf", maskCPF(e.target.value))} 
+                placeholder="000.000.000-00" 
+                maxLength={14}
+              />
+            </div>
+          )}
+
+          {isMedico && (
+            <div className="space-y-2">
+              <Label>CRM (apenas números)</Label>
+              <Input 
+                value={form.crm} 
+                onChange={(e) => setField("crm", maskCRM(e.target.value, form.estado))} 
+                placeholder={form.estado ? `Digite apenas os números (ex: 123456 → 123456/${form.estado})` : "Selecione a UF primeiro"} 
+                maxLength={11}
+                disabled={!form.estado}
+              />
+              {form.estado && form.crm && (
+                <p className="text-xs text-muted-foreground">
+                  CRM completo: <span className="font-semibold">{form.crm}</span>
+                </p>
+              )}
+            </div>
+          )}
+
           {isMedico && (
             <div className="space-y-2">
               <Label>Especialidade Médica</Label>
@@ -234,8 +304,19 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
               <Input required value={form.pais} onChange={(e) => setField("pais", e.target.value)} placeholder="Brasil" />
             </div>
             <div className="space-y-2 md:col-span-1">
-              <Label>Estado *</Label>
-              <Input required value={form.estado} onChange={(e) => setField("estado", normalizeUF(e.target.value))} placeholder="SP" />
+              <Label>Estado (UF) *</Label>
+              <Select value={form.estado} onValueChange={(v) => setField("estado", v)} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a UF" />
+                </SelectTrigger>
+                <SelectContent>
+                  {UFS_BRASILEIRAS.map((uf) => (
+                    <SelectItem key={uf.value} value={uf.value}>
+                      {uf.value} - {uf.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2 md:col-span-1">
               <Label>Cidade *</Label>
@@ -243,7 +324,17 @@ export default function RegisterUserModal({ open, onOpenChange, onSuccess }: Reg
             </div>
             <div className="space-y-2 md:col-span-1">
               <Label>Data de nascimento *</Label>
-              <Input type="date" required value={form.dataNasc} onChange={(e) => setField("dataNasc", e.target.value)} />
+              <Input 
+                type="date" 
+                required 
+                value={form.dataNasc} 
+                onChange={(e) => setField("dataNasc", e.target.value)} 
+                min={getDataNascimentoMinima()}
+                max={getDataNascimentoMaxima()}
+              />
+              <p className="text-xs text-muted-foreground">
+                Entre 150 anos e 6 meses atrás (apenas datas passadas)
+              </p>
             </div>
           </div>
 

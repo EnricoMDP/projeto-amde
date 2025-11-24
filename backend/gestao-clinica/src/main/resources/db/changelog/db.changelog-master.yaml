@@ -229,3 +229,5 @@ databaseChangeLog:
       file: db/changelog/inserts/005-add-grau-suporte.yaml
   - include:
       file: db/changelog/inserts/006-create-log-auditoria.yaml
+  - include:
+      file: db/changelog/inserts/007-add-cpf-crm.yaml

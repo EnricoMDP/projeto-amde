@@ -16,6 +16,10 @@ public class Funcionario {
     private Usuario usuario; // Funcionário é um tipo de Usuário
 
     private String cnpj;
+    
+    @Column(unique = true, length = 15)
+    private String crm; // CRM no formato: 123456/SP ou 12345678
+    
     private String cargo;
     
     // Getters e Setters
@@ -41,6 +45,14 @@ public class Funcionario {
 
     public void setCnpj(String cnpj) {
         this.cnpj = cnpj;
+    }
+
+    public String getCrm() {
+        return crm;
+    }
+
+    public void setCrm(String crm) {
+        this.crm = crm;
     }
 
     public String getCargo() {

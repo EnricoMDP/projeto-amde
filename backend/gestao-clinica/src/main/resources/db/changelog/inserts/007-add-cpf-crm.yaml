@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-1-add-cpf-crm-columns
+      author: enrico
+      changes:
+        - addColumn:
+            tableName: usuario
+            columns:
+              - column:
+                  name: cpf
+                  type: varchar(14)
+                  constraints:
+                    unique: true
+                    nullable: true
+        - addColumn:
+            tableName: funcionarios
+            columns:
+              - column:
+                  name: crm
+                  type: varchar(15)
+                  constraints:
+                    unique: true
+                    nullable: true

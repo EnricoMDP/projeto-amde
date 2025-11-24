@@ -21,6 +21,7 @@ public class UsuarioService {
     private final RegistroProntuarioRepository registroRepository; // Renomeado
     private final RegistroProntuarioMapper registroProntuarioMapper; // Novo mapper injetado
     private final AuditoriaService auditoriaService;
+    private final FuncionarioRepository funcionarioRepository;
 
     public UsuarioService(UsuarioRepository repository,
                           PasswordEncoder passwordEncoder,
@@ -28,7 +29,8 @@ public class UsuarioService {
                           UsuarioMapper usuarioMapper,
                           RegistroProntuarioRepository registroRepository,
                           RegistroProntuarioMapper registroProntuarioMapper,
-                          AuditoriaService auditoriaService) {
+                          AuditoriaService auditoriaService,
+                          FuncionarioRepository funcionarioRepository) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -36,6 +38,7 @@ public class UsuarioService {
         this.registroRepository = registroRepository;
         this.registroProntuarioMapper = registroProntuarioMapper;
         this.auditoriaService = auditoriaService;
+        this.funcionarioRepository = funcionarioRepository;
     }
 
     public List<UsuarioDTO> listarTodos() { 
@@ -53,6 +56,21 @@ public class UsuarioService {
     public UsuarioDTO register(UsuarioCadastroDTO dto) {
         if (repository.existsByEmail(dto.email())) {
             throw new BusinessException("Email já cadastrado");
+        }
+        
+        // Validar CPF duplicado se fornecido
+        if (dto.cpf() != null && !dto.cpf().isBlank()) {
+            String cpfLimpo = dto.cpf().replaceAll("[^0-9]", "");
+            if (repository.existsByCpf(cpfLimpo)) {
+                throw new BusinessException("CPF já cadastrado no sistema");
+            }
+        }
+        
+        // Validar CRM duplicado se fornecido
+        if (dto.crm() != null && !dto.crm().isBlank()) {
+            if (funcionarioRepository.existsByCrm(dto.crm())) {
+                throw new BusinessException("CRM já cadastrado no sistema");
+            }
         }
 
         Usuario usuario = usuarioMapper.toEntity(dto);
@@ -74,6 +92,11 @@ public class UsuarioService {
                 funcionario.setCargo(dto.cargo());
             } else if (dto.nivelAcesso() == NivelAcesso.MEDICO) {
                 funcionario.setCargo("Clínico Geral");
+            }
+            
+            // Adiciona CRM se fornecido
+            if (dto.crm() != null && !dto.crm().isBlank()) {
+                funcionario.setCrm(dto.crm());
             }
             
             usuario.setFuncionario(funcionario);
@@ -157,6 +180,25 @@ public class UsuarioService {
         if (dto.email() != null && !dto.email().equals(usuario.getEmail()) && repository.existsByEmail(dto.email())) {
             throw new BusinessException("Email já cadastrado");
         }
+        
+        // Validar CPF duplicado se fornecido e diferente do atual
+        if (dto.cpf() != null && !dto.cpf().isBlank()) {
+            String cpfLimpo = dto.cpf().replaceAll("[^0-9]", "");
+            String cpfAtualLimpo = usuario.getCpf() != null ? usuario.getCpf().replaceAll("[^0-9]", "") : null;
+            
+            if (!cpfLimpo.equals(cpfAtualLimpo) && repository.existsByCpf(cpfLimpo)) {
+                throw new BusinessException("CPF já cadastrado no sistema");
+            }
+        }
+        
+        // Validar CRM duplicado se fornecido e diferente do atual
+        if (dto.crm() != null && !dto.crm().isBlank()) {
+            String crmAtual = usuario.getFuncionario() != null ? usuario.getFuncionario().getCrm() : null;
+            
+            if (!dto.crm().equals(crmAtual) && funcionarioRepository.existsByCrm(dto.crm())) {
+                throw new BusinessException("CRM já cadastrado no sistema");
+            }
+        }
 
         // StringBuilder para registrar alterações
         StringBuilder alteracoes = new StringBuilder();
@@ -171,6 +213,11 @@ public class UsuarioService {
         if (dto.email() != null && !dto.email().equals(usuario.getEmail())) {
             alteracoes.append("[Email: '").append(usuario.getEmail()).append("' → '").append(dto.email()).append("'] ");
             usuario.setEmail(dto.email());
+            houveAlteracao = true;
+        }
+        if (dto.cpf() != null && !dto.cpf().equals(usuario.getCpf())) {
+            alteracoes.append("[CPF: '").append(usuario.getCpf()).append("' → '").append(dto.cpf()).append("'] ");
+            usuario.setCpf(dto.cpf());
             houveAlteracao = true;
         }
         if (dto.numCelular() != null && !dto.numCelular().equals(usuario.getNumCelular())) {
@@ -229,6 +276,16 @@ public class UsuarioService {
             if (dto.grauSuporte() != null && !dto.grauSuporte().equals(usuario.getPaciente().getGrauSuporte())) {
                 alteracoes.append("[Grau Suporte: '").append(usuario.getPaciente().getGrauSuporte()).append("' → '").append(dto.grauSuporte()).append("'] ");
                 usuario.getPaciente().setGrauSuporte(dto.grauSuporte());
+                houveAlteracao = true;
+            }
+        }
+
+        // Atualizar CRM se o usuário for funcionário (MEDICO ou ADMINISTRADOR)
+        if ((usuario.getNivelAcesso() == NivelAcesso.MEDICO || usuario.getNivelAcesso() == NivelAcesso.ADMINISTRADOR) 
+            && usuario.getFuncionario() != null) {
+            if (dto.crm() != null && !dto.crm().equals(usuario.getFuncionario().getCrm())) {
+                alteracoes.append("[CRM: '").append(usuario.getFuncionario().getCrm()).append("' → '").append(dto.crm()).append("'] ");
+                usuario.getFuncionario().setCrm(dto.crm());
                 houveAlteracao = true;
             }
         }
