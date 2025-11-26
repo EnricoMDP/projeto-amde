@@ -8,6 +8,7 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./pages/AdminLayout";
 import AdminUsers from "./pages/AdminUsers";
+import Overview from "./pages/Overview";
 import { getAuth, type Role } from "@/lib/auth";
 import Patients from "./pages/Patients";
 import Appointments from "./pages/Appointments";
@@ -32,7 +33,7 @@ const App = () => (
           <Route element={<RequireAuth><AdminLayout /></RequireAuth>}>
             {/* Todas as rotas aqui dentro requerem login e usam o AdminLayout */}
             
-            <Route path="/overview" element={<div className="p-6"><h1 className="text-2xl font-bold">Visão Geral</h1></div>} />
+            <Route path="/overview" element={<Overview />} />
 
             {/* Nova Rota: Agendamentos (Permite Médico e Admin) */}
             <Route element={<RequireRole roles={["ADMINISTRADOR", "MEDICO"]} />}>
