@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { getAuth } from "@/lib/auth";
-import { logout as doLogout } from "@/services/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
   {
@@ -43,6 +43,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { role } = getAuth();
+  const { logout } = useAuth(); // Pega o logout do contexto
 
   const items = menuItems.filter((item) => {
     if (item.url === "/admin/users") {
@@ -56,8 +57,7 @@ export function AppSidebar() {
   });
 
   const handleLogout = () => {
-    doLogout();
-    navigate("/login", { replace: true });
+    logout(); // Usa o logout do AuthContext que atualiza o estado e redireciona
   };
 
   return (
