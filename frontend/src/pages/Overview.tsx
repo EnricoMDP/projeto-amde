@@ -176,7 +176,7 @@ export default function Overview() {
 
           {role === "ADMINISTRADOR" && (
             <div className="flex flex-col gap-1.5 min-w-[200px]">
-              <Label className="text-sm text-gray-600">Profissiona</Label>
+              <Label className="text-sm text-gray-600">Profissional</Label>
               <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Todos" />
