@@ -59,11 +59,19 @@ jobs:
           npm run build
         working-directory: ./frontend
 
-      # 4. Injetar URL da API (Substituindo o placeholder)
+      # 4. Injetar URL da API (Lógica Inteligente: Relativo em Prod, IP Direto em Teste)
       - name: Inject API URL into Build Output
         run: |
-          # O 'sed' substitui a string placeholder injetada pelo Vite pela URL final do Backend
-          find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|http://${{ env.IP_FINAL }}:8080|g" {} \;
+          # Se o IP for o de produção, usamos o caminho relativo seguro (HTTPS via CloudFront)
+          if [ "${{ env.IP_FINAL }}" == "${{ env.IP_PROD_PADRAO }}" ]; then
+            echo "Configurando URL para PRODUÇÃO (CloudFront /api)"
+            find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|/api|g" {} \;
+          
+          # Se for um deploy manual de teste (IP diferente), mantemos o acesso direto HTTP:8080
+          else
+            echo "Configurando URL para TESTE DIRETO (HTTP IP:8080)"
+            find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|http://${{ env.IP_FINAL }}:8080|g" {} \;
+          fi
 
       # 5. Configurar Credenciais AWS (Instala o AWS CLI)
       - name: Configure AWS Credentials

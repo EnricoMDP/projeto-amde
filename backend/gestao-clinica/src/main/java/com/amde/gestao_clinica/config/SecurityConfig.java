@@ -15,6 +15,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.Arrays;
 
 @Configuration
 public class SecurityConfig {
@@ -64,23 +65,24 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
+   @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
+        CorsConfiguration configuration = new CorsConfiguration();
         
-        // Usa as origens definidas pela propriedade. Se não houver, usa um padrão seguro.
-        List<String> origins = (allowedOrigins != null && allowedOrigins.length > 0) 
-            ? List.of(allowedOrigins) 
-            : List.of("http://localhost:5173", "http://localhost:8080");
-
-        config.setAllowedOrigins(origins);
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Content-Disposition"));
-        config.setAllowCredentials(true);
-
+        // LISTA DE ORIGENS PERMITIDAS (O Segredo do Sucesso)
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:5173",             // Seu ambiente local
+            "https://projetoamde.com.br",        // Domínio Oficial
+            "https://www.projetoamde.com.br",    // Domínio com WWW
+            "https://dtzu1m0v2dkwx.cloudfront.net" // URL direta do CloudFront (Backup)
+        ));
+        
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowCredentials(true);
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
