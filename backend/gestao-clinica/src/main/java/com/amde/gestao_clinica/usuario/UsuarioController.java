@@ -34,7 +34,7 @@ public class UsuarioController {
         return ResponseEntity.ok(service.register(dto));
     }
 
-    @PostMapping("/login")
+    @PostMapping(value = "/login", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> login(@Valid @RequestBody UsuarioLoginDTO dto) {
         String jwt = service.login(dto);
         return ResponseEntity.ok(jwt);
