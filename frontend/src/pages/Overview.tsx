@@ -96,10 +96,13 @@ export default function Overview() {
     async function loadProfessionals() {
       try {
         const { data } = await apiClient.get("/api/usuarios");
-        const medicos = data.filter((u: any) => u.nivelAcesso === "MEDICO");
+        // Garante que data é um array antes de filtrar
+        const usuarios = Array.isArray(data) ? data : [];
+        const medicos = usuarios.filter((u: any) => u.nivelAcesso === "MEDICO");
         setProfessionals(medicos);
       } catch (err) {
         console.error("Erro ao carregar profissionais:", err);
+        setProfessionals([]);
       }
     }
     if (role === "ADMINISTRADOR") {
@@ -120,19 +123,24 @@ export default function Overview() {
 
       // Buscar estatísticas gerais
       const { data: statsData } = await apiClient.get("/api/dashboard/stats", { params });
-      setStats(statsData);
+      setStats(statsData || {
+        totalConsultas: 0,
+        totalPacientes: 0,
+        totalProfissionais: 0,
+        consultasHoje: 0,
+      });
 
       // Buscar consultas por profissional
       const { data: profData } = await apiClient.get("/api/dashboard/consultas-por-profissional", { params });
-      setConsultasPorProfissional(profData);
+      setConsultasPorProfissional(Array.isArray(profData) ? profData : []);
 
       // Buscar consultas por período (gráfico de linha)
       const { data: periodoData } = await apiClient.get("/api/dashboard/consultas-por-periodo", { params });
-      setConsultasPorPeriodo(periodoData);
+      setConsultasPorPeriodo(Array.isArray(periodoData) ? periodoData : []);
 
       // Buscar estatísticas por especialidade
       const { data: especData } = await apiClient.get("/api/dashboard/consultas-por-especialidade", { params });
-      setEspecialidadeStats(especData);
+      setEspecialidadeStats(Array.isArray(especData) ? especData : []);
 
     } catch (err: any) {
       toast.error("Erro ao carregar dashboard", {

@@ -29,7 +29,7 @@ interface AuthState {
  * e retorna o estado de autenticação atual.
  */
 export function getAuth(): AuthState {
-  const token = localStorage.getItem("authToken");
+  let token = localStorage.getItem("authToken");
 
   // Se não houver token, retorna estado "deslogado"
   if (!token) {
@@ -43,6 +43,15 @@ export function getAuth(): AuthState {
   }
 
   try {
+    // Limpa o token de espaços e quebras de linha
+    token = token.trim();
+    
+    // Valida formato básico de JWT (3 partes separadas por pontos)
+    const jwtParts = token.split('.');
+    if (jwtParts.length !== 3) {
+      throw new Error("Formato de token JWT inválido");
+    }
+    
     // Decodifica o token usando a biblioteca jwt-decode
     const decoded = jwtDecode<JwtPayload>(token);
 
@@ -75,6 +84,10 @@ export function getAuth(): AuthState {
   } catch (error) {
     // Se a decodificação falhar (token inválido/malformado)
     console.error("Falha ao decodificar token JWT:", error);
+    console.error("Token problemático (primeiros 50 caracteres):", token?.substring(0, 50));
+    console.error("Tamanho do token:", token?.length);
+    console.error("Número de partes do JWT:", token?.split('.').length);
+    
     localStorage.removeItem("authToken"); // Limpa o token inválido
     // Dispara evento para notificar o AuthContext
      window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', newValue: null }));
@@ -114,12 +127,14 @@ export function hasAnyRole(roles: Role[]): boolean {
  */
 export function setAuthToken(token: string | null): void {
   if (token) {
-    localStorage.setItem("authToken", token);
+    // Limpa o token antes de salvar
+    const cleanToken = token.trim();
+    localStorage.setItem("authToken", cleanToken);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', newValue: cleanToken }));
   } else {
     localStorage.removeItem("authToken");
+    window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', newValue: null }));
   }
-  // Dispara um evento 'storage' para que outras abas ou o AuthContext possam reagir
-  window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', newValue: token }));
 }
 
 /**

@@ -14,48 +14,51 @@ import Patients from "./pages/Patients";
 import Appointments from "./pages/Appointments";
 import { ReactNode } from "react";
 import { useAuth } from "./contexts/AuthContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Rotas Públicas */}
-          <Route path="/login" element={<RedirectIfAuth><Login /></RedirectIfAuth>} />
-          <Route path="/cadastro" element={<Register />} />
-          <Route path="/" element={<RedirectIfAuth><Login /></RedirectIfAuth>} />
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Rotas Públicas */}
+            <Route path="/login" element={<RedirectIfAuth><Login /></RedirectIfAuth>} />
+            <Route path="/cadastro" element={<Register />} />
+            <Route path="/" element={<RedirectIfAuth><Login /></RedirectIfAuth>} />
 
-          {/* Rotas Protegidas */}
-          <Route element={<RequireAuth><AdminLayout /></RequireAuth>}>
-            {/* Todas as rotas aqui dentro requerem login e usam o AdminLayout */}
-            
-            <Route path="/overview" element={<Overview />} />
+            {/* Rotas Protegidas */}
+            <Route element={<RequireAuth><AdminLayout /></RequireAuth>}>
+              {/* Todas as rotas aqui dentro requerem login e usam o AdminLayout */}
+              
+              <Route path="/overview" element={<Overview />} />
 
-            {/* Nova Rota: Agendamentos (Permite Médico e Admin) */}
-            <Route element={<RequireRole roles={["ADMINISTRADOR", "MEDICO"]} />}>
-              <Route path="/appointments" element={<Appointments />} /> 
+              {/* Nova Rota: Agendamentos (Permite Médico e Admin) */}
+              <Route element={<RequireRole roles={["ADMINISTRADOR", "MEDICO"]} />}>
+                <Route path="/appointments" element={<Appointments />} /> 
+              </Route>
+
+              {/* Agrupamento de rotas que requerem papel de MÉDICO ou superior */}
+              <Route element={<RequireRole roles={["ADMINISTRADOR", "MEDICO"]} />}>
+                <Route path="/patients" element={<Patients />} />
+              </Route>
+
+              {/* Agrupamento de rotas que requerem papel de ADMINISTRADOR */}
+              <Route element={<RequireRole roles={["ADMINISTRADOR"]} />}>
+                <Route path="/admin/users" element={<AdminUsers />} />
+              </Route>
             </Route>
 
-            {/* Agrupamento de rotas que requerem papel de MÉDICO ou superior */}
-            <Route element={<RequireRole roles={["ADMINISTRADOR", "MEDICO"]} />}>
-              <Route path="/patients" element={<Patients />} />
-            </Route>
-
-            {/* Agrupamento de rotas que requerem papel de ADMINISTRADOR */}
-            <Route element={<RequireRole roles={["ADMINISTRADOR"]} />}>
-              <Route path="/admin/users" element={<AdminUsers />} />
-            </Route>
-          </Route>
-
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

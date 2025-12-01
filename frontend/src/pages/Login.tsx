@@ -35,9 +35,18 @@ const Login = () => {
           senha: password,
         });
 
-        const token = response.data;
-
-        if (token && typeof token === 'string') {
+        // Limpa o token de espaços, quebras de linha e outros caracteres indesejados
+        let token = response.data;
+        
+        if (typeof token === 'string') {
+          token = token.trim();
+          
+          // Valida formato básico de JWT (3 partes separadas por pontos)
+          const jwtParts = token.split('.');
+          if (jwtParts.length !== 3) {
+            throw new Error("Formato de token inválido");
+          }
+          
           login(token); // <-- ATUALIZA O ESTADO GLOBAL DE AUTENTICAÇÃO
           
           toast.success("Login realizado com sucesso!", {

@@ -12,11 +12,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Cria o "Provedor" que vai gerenciar o estado
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // O estado começa lendo o token que já pode existir no localStorage
-  const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
+  const [token, setToken] = useState<string | null>(() => {
+    const storedToken = localStorage.getItem('authToken');
+    return storedToken ? storedToken.trim() : null;
+  });
 
   const login = (userToken: string) => {
-    localStorage.setItem('authToken', userToken);
-    setToken(userToken);
+    const cleanToken = userToken.trim();
+    localStorage.setItem('authToken', cleanToken);
+    setToken(cleanToken);
   };
 
   const logout = () => {
