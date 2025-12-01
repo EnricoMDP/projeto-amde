@@ -40,9 +40,13 @@ const AdminUsers = () => {
     try {
       setLoading(true);
       const res = await apiClient.get<UsuarioDTO[]>("/api/usuarios");
-      if (active) setUsers(res.data);
+      // Garante que sempre temos um array
+      if (active) setUsers(Array.isArray(res.data) ? res.data : []);
     } catch (e: any) {
-      if (active) setError(e?.message || "Falha ao carregar usuários");
+      if (active) {
+        setError(e?.message || "Falha ao carregar usuários");
+        setUsers([]); // Define array vazio em caso de erro
+      }
     } finally {
       if (active) setLoading(false);
     }

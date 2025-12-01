@@ -60,7 +60,6 @@ jobs:
         working-directory: ./frontend
 
       # 4. Injetar URL da API (Lógica Inteligente: Relativo em Prod, IP Direto em Teste)
-      # 4. Injetar URL da API (Versão Corrigida e Robusta)
       - name: Inject API URL into Build Output
         run: |
           echo "Debug: Evento é ${{ github.event_name }}"
@@ -68,14 +67,15 @@ jobs:
           
           # Lógica Simplificada:
           # SE for um push automático na branch main OU se o IP for o padrão de produção...
-          # ...ENTÃO configuramos para usar o CloudFront (/api)
+          # ...ENTÃO configuramos para usar o CloudFront com URL relativa (string vazia)
           if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ env.IP_FINAL }}" == "${{ env.IP_PROD_PADRAO }}" ]]; then
-            echo "✅ MODO PRODUÇÃO DETECTADO: Configurando URL relativa segura (/api)"
-            find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|/|g" {} \;
+            echo "✅ MODO PRODUÇÃO DETECTADO: Configurando URL relativa vazia (usa /api via proxy)"
+            find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL=VITE_API_BASE_URL_PLACEHOLDER|VITE_API_BASE_URL=|g" {} \;
+            find ./frontend/dist -type f -name "*.js" -exec sed -i 's|"VITE_API_BASE_URL_PLACEHOLDER"|""||g' {} \;
           
           # CASO CONTRÁRIO (Deploy manual com IP diferente para teste), usa o IP direto
           else
-            echo "⚠️ MODO TESTE DETECTADO: Configurando URL direta insegura (http://${{ env.IP_FINAL }}:8080)"
+            echo "⚠️ MODO TESTE DETECTADO: Configurando URL direta (http://${{ env.IP_FINAL }}:8080)"
             find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|http://${{ env.IP_FINAL }}:8080|g" {} \;
           fi
 

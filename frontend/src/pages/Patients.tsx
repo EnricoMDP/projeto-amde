@@ -37,7 +37,8 @@ const Patients = () => {
     setError(null);
     try {
       const response = await apiClient.get<UsuarioDTO[]>("/api/usuarios/pacientes");
-      setUsers(response.data);
+      // Garante que sempre temos um array
+      setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       let errorMessage = "Falha ao carregar pacientes.";
       if (err instanceof AxiosError && err.response) {
@@ -50,6 +51,7 @@ const Patients = () => {
         errorMessage = err.message;
       }
       setError(errorMessage);
+      setUsers([]); // Define array vazio em caso de erro
     } finally {
       setLoading(false);
     }

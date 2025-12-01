@@ -40,12 +40,14 @@ export interface PerfilPacienteDTO {
 
 export async function getUsuarios(): Promise<UsuarioDTO[]> {
   const { data } = await apiClient.get<UsuarioDTO[]>("/api/usuarios");
-  return data;
+  // Garante que sempre retornamos um array
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getPacientes(): Promise<UsuarioDTO[]> {
   const { data } = await apiClient.get<UsuarioDTO[]>("/api/usuarios/pacientes");
-  return data;
+  // Garante que sempre retornamos um array
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getPerfilPaciente(idUsuario: number): Promise<PerfilPacienteDTO> {

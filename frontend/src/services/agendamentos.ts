@@ -39,7 +39,8 @@ export interface AgendamentoAtualizacaoPayload {
 // READ ALL
 export async function getAgendamentos(): Promise<AgendamentoDTO[]> {
   const { data } = await apiClient.get<AgendamentoDTO[]>("/api/agendamentos");
-  return data;
+  // Garante que sempre retornamos um array
+  return Array.isArray(data) ? data : [];
 }
 
 // CREATE

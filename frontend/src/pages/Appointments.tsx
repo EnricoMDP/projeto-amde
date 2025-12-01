@@ -29,9 +29,11 @@ const Appointments = () => {
     setError(null);
     try {
       const data = await getAgendamentos();
-      setAppointments(data);
+      // Garante que sempre temos um array
+      setAppointments(Array.isArray(data) ? data : []);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Falha ao carregar agendamentos");
+      setAppointments([]); // Define array vazio em caso de erro
     } finally {
       setLoading(false);
     }
