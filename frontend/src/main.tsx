@@ -8,6 +8,7 @@ import { initTokenValidation } from './lib/tokenValidator.ts';
 
 // Valida e limpa tokens corrompidos antes de iniciar a aplicação
 initTokenValidation();
+// Build version: 2025-12-01-v2
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
