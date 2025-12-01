@@ -71,10 +71,10 @@ public class SecurityConfig {
         
         // LISTA DE ORIGENS PERMITIDAS (O Segredo do Sucesso)
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",             // Seu ambiente local
-            "https://projetoamde.com.br",        // Domínio Oficial
-            "https://www.projetoamde.com.br",    // Domínio com WWW
-            "https://dtzu1m0v2dkwx.cloudfront.net" // URL direta do CloudFront (Backup)
+            "http://localhost:5173",                    // Seu ambiente local
+            "https://amdesorocaba.com.br",              // Domínio Principal
+            "https://www.amdesorocaba.com.br",          // Domínio com WWW
+            "https://dtzu1m0v2dkwx.cloudfront.net"     // URL direta do CloudFront
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
