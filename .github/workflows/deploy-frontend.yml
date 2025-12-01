@@ -59,25 +59,17 @@ jobs:
           npm run build
         working-directory: ./frontend
 
-      # 4. Injetar URL da API (Lógica Inteligente: Relativo em Prod, IP Direto em Teste)
+      # 4. Injetar URL da API (S3/CloudFront não tem nginx, precisa apontar direto pro backend)
       - name: Inject API URL into Build Output
         run: |
           echo "Debug: Evento é ${{ github.event_name }}"
           echo "Debug: IP Alvo é ${{ env.IP_FINAL }}"
           
-          # Lógica Simplificada:
-          # SE for um push automático na branch main OU se o IP for o padrão de produção...
-          # ...ENTÃO configuramos para usar o CloudFront com URL relativa (string vazia)
-          if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ env.IP_FINAL }}" == "${{ env.IP_PROD_PADRAO }}" ]]; then
-            echo "✅ MODO PRODUÇÃO DETECTADO: Configurando URL relativa vazia (usa /api via proxy)"
-            find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL=VITE_API_BASE_URL_PLACEHOLDER|VITE_API_BASE_URL=|g" {} \;
-            find ./frontend/dist -type f -name "*.js" -exec sed -i 's|"VITE_API_BASE_URL_PLACEHOLDER"|""||g' {} \;
+          # Em produção no S3/CloudFront, o frontend é estático e precisa apontar pro backend EC2
+          API_URL="http://${{ env.IP_FINAL }}:8080"
           
-          # CASO CONTRÁRIO (Deploy manual com IP diferente para teste), usa o IP direto
-          else
-            echo "⚠️ MODO TESTE DETECTADO: Configurando URL direta (http://${{ env.IP_FINAL }}:8080)"
-            find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|http://${{ env.IP_FINAL }}:8080|g" {} \;
-          fi
+          echo "✅ Configurando API URL: $API_URL"
+          find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|$API_URL|g" {} \;
 
       # 5. Configurar Credenciais AWS (Instala o AWS CLI)
       - name: Configure AWS Credentials
