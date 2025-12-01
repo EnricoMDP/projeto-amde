@@ -59,17 +59,15 @@ jobs:
           npm run build
         working-directory: ./frontend
 
-      # 4. Injetar URL da API (S3/CloudFront não tem nginx, precisa apontar direto pro backend)
+      # 4. Injetar URL da API (Usa URL relativa - CloudFront fará proxy para backend)
       - name: Inject API URL into Build Output
         run: |
           echo "Debug: Evento é ${{ github.event_name }}"
           echo "Debug: IP Alvo é ${{ env.IP_FINAL }}"
           
-          # Em produção no S3/CloudFront, o frontend é estático e precisa apontar pro backend EC2
-          API_URL="http://${{ env.IP_FINAL }}:8080"
-          
-          echo "✅ Configurando API URL: $API_URL"
-          find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|$API_URL|g" {} \;
+          # Usa URL vazia para requisições relativas (CloudFront fará proxy via /api)
+          echo "✅ Configurando API URL vazia (usa CloudFront como proxy)"
+          find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER||g" {} \;
 
       # 5. Configurar Credenciais AWS (Instala o AWS CLI)
       - name: Configure AWS Credentials
