@@ -110,8 +110,16 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
       if (!f) return;
       try {
         setUploading(true);
+        console.log("Iniciando upload:", { 
+          pacienteId: patient.idUsuario, 
+          arquivo: f.name, 
+          tamanho: f.size, 
+          categoria: selectedCategory, 
+          titulo: docTitle 
+        });
         // Envia ID da categoria e Título
-        await uploadProntuario(patient.idUsuario, f, Number(selectedCategory), docTitle);
+        const resultado = await uploadProntuario(patient.idUsuario, f, Number(selectedCategory), docTitle);
+        console.log("Upload concluído:", resultado);
         toast.success("Documento salvo");
         setDocTitle(""); // Limpa título
         
@@ -119,6 +127,7 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
         const data = await getPerfilPaciente(patient.idUsuario);
         setPerfil(data);
       } catch (err: any) {
+        console.error("Erro no upload:", err);
         toast.error("Falha no upload", { description: err?.message });
       } finally {
         setUploading(false);
