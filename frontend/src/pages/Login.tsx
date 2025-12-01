@@ -35,6 +35,15 @@ const Login = () => {
           senha: password,
         });
 
+        // LOG DETALHADO PARA DEBUG
+        console.log('=== DEBUG LOGIN ===');
+        console.log('Status:', response.status);
+        console.log('Headers:', response.headers);
+        console.log('Content-Type:', response.headers['content-type']);
+        console.log('Tipo do dado:', typeof response.data);
+        console.log('Primeiros 200 caracteres da resposta:', String(response.data).substring(0, 200));
+        console.log('==================');
+
         // Limpa o token de espaços, quebras de linha e outros caracteres indesejados
         let token = response.data;
         
