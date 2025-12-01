@@ -71,7 +71,7 @@ jobs:
           # ...ENTÃO configuramos para usar o CloudFront (/api)
           if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ env.IP_FINAL }}" == "${{ env.IP_PROD_PADRAO }}" ]]; then
             echo "✅ MODO PRODUÇÃO DETECTADO: Configurando URL relativa segura (/api)"
-            find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|/api|g" {} \;
+            find ./frontend/dist -type f -name "*.js" -exec sed -i "s|VITE_API_BASE_URL_PLACEHOLDER|/|g" {} \;
           
           # CASO CONTRÁRIO (Deploy manual com IP diferente para teste), usa o IP direto
           else
