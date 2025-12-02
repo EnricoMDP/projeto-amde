@@ -256,10 +256,10 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
                                   <FileText className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
-                                  <span className="text-sm font-medium text-gray-900 truncate" title={doc.tituloDocumento || doc.nomeArquivoOriginal}>
+                                  <span className="block w-full text-sm font-medium text-gray-900 truncate" title={doc.tituloDocumento || doc.nomeArquivoOriginal}>
                                     {doc.tituloDocumento || doc.nomeArquivoOriginal}
                                   </span>
-                                  <span className="text-[11px] text-gray-500 truncate" title={`${date} • ${doc.nomeArquivoOriginal}`}>
+                                  <span className="block w-full text-[11px] text-gray-500 truncate" title={`${date} • ${doc.nomeArquivoOriginal}`}>
                                     {date} • {doc.nomeArquivoOriginal}
                                   </span>
                                 </div>
