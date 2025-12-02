@@ -251,21 +251,19 @@ export default function PatientDetailsModal({ open, onOpenChange, patient }: Pat
                           {items.map((doc) => {
                             const date = doc.dataRegistro ? format(parseISO(doc.dataRegistro), "dd/MM/yy HH:mm") : "-";
                             return (
-                              <div key={doc.idRegistro} className="flex items-center justify-between p-2 rounded-md border hover:bg-gray-50 transition-colors group">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                  <div className="h-8 w-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                                    <FileText className="h-4 w-4" />
-                                  </div>
-                                  <div className="flex flex-col min-w-0">
-                                    <span className="text-sm font-medium text-gray-900 truncate" title={doc.tituloDocumento}>
-                                      {doc.tituloDocumento || doc.nomeArquivoOriginal}
-                                    </span>
-                                    <span className="text-[11px] text-gray-500 truncate">
-                                      {date} • {doc.nomeArquivoOriginal}
-                                    </span>
-                                  </div>
+                              <div key={doc.idRegistro} className="flex items-center gap-2 p-2 rounded-md border hover:bg-gray-50 transition-colors group">
+                                <div className="h-8 w-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                                  <FileText className="h-4 w-4" />
                                 </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <span className="text-sm font-medium text-gray-900 truncate block" title={doc.tituloDocumento || doc.nomeArquivoOriginal}>
+                                    {doc.tituloDocumento || doc.nomeArquivoOriginal}
+                                  </span>
+                                  <span className="text-[11px] text-gray-500 truncate block" title={`${date} • ${doc.nomeArquivoOriginal}`}>
+                                    {date} • {doc.nomeArquivoOriginal}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0 ml-2">
                                   <Button variant="ghost" size="icon" className="h-7 w-7" 
                                     onClick={() => downloadProntuario(doc.idRegistro, doc.nomeArquivoOriginal)}>
                                     <ArrowDownToLine className="h-4 w-4 text-gray-600" />
